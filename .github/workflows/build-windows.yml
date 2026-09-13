@@ -21,14 +21,13 @@ jobs:
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
-      # Langkah BARU: Menyuruh robot membuat kerangka Windows secara otomatis
+      # PERBAIKAN DI SINI: Memaksa robot memakai nama yang sah (pengumuman_pro)
       - name: Create Windows Project Files
-        run: flutter create --platforms=windows .
+        run: flutter create --project-name pengumuman_pro --platforms=windows .
 
       - name: Install Dependencies
         run: flutter pub get
 
-      # Langkah BARU: Memaksa robot menyuntikkan kode Multi-Window ke mesin C++
       - name: Inject Multi-Window C++ Code
         run: |
           $code = @"
