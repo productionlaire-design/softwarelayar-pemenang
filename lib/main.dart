@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // <--- INI BARIS YANG SAYA LUPA (BIANG KEROKNYA)
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:video_player/video_player.dart';
@@ -10,7 +11,6 @@ void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
 
-  // Router: Cek apakah aplikasi dibuka sebagai jendela utama atau jendela kedua (LED)
   if (args.firstOrNull == 'multi_window') {
     final windowId = int.parse(args[1]);
     runApp(LedApp(windowId: windowId));
@@ -20,7 +20,7 @@ void main(List<String> args) async {
 }
 
 // ==========================================
-// BAGIAN 1: APLIKASI OPERATOR (JENDELA UTAMA)
+// BAGIAN 1: APLIKASI OPERATOR
 // ==========================================
 class OperatorApp extends StatelessWidget {
   const OperatorApp({Key? key}) : super(key: key);
@@ -30,7 +30,7 @@ class OperatorApp extends StatelessWidget {
     return MaterialApp(
       title: 'Operator',
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0F172A), // slate-900
+        scaffoldBackgroundColor: const Color(0xFF0F172A),
       ),
       home: const OperatorScreen(),
     );
@@ -88,7 +88,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Operator - Pengumuman Pemenang', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1E293B), // slate-800
+        backgroundColor: const Color(0xFF1E293B),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -155,7 +155,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
 }
 
 // ==========================================
-// BAGIAN 2: APLIKASI LED (JENDELA KEDUA)
+// BAGIAN 2: APLIKASI LED
 // ==========================================
 class LedApp extends StatelessWidget {
   final int windowId;
@@ -240,7 +240,6 @@ class _LedScreenState extends State<LedScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Latar Belakang Video
           if (!isImage && _videoController != null && _videoController!.value.isInitialized)
             FittedBox(
               fit: BoxFit.cover,
@@ -250,12 +249,8 @@ class _LedScreenState extends State<LedScreen> {
                 child: VideoPlayer(_videoController!),
               ),
             ),
-          
-          // Latar Belakang Gambar
           if (isImage && imagePath.isNotEmpty)
             Image.file(File(imagePath), fit: BoxFit.cover),
-            
-          // Teks UI (Ditengah Layar)
           Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 40),
@@ -263,7 +258,7 @@ class _LedScreenState extends State<LedScreen> {
                 color: Colors.amber.withOpacity(0.9),
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(color: Colors.white, width: 4),
-                boxShadow: [BoxShadow(color: Colors.black54, blurRadius: 20)],
+                boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 20)],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
