@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest # KITA KEMBALI KE SERVER TERCEPAT
+    runs-on: windows-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -15,16 +15,16 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0'
-          channel: 'stable'
+          channel: 'stable' # <--- HANYA GUNAKAN STABLE (Hapus paksaan versi 3.19.0)
 
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
-      # PERINTAH SAKTI BARU: Hapus folder Windows sisa lama, lalu buat baru yang 100% bersih!
-      - name: Clean and Create Windows Project
+      - name: Clean and Recreate Windows Folder
         run: |
-          if (Test-Path -Path "windows") { Remove-Item -Recurse -Force "windows" }
+          if (Test-Path "windows") { Remove-Item -Recurse -Force "windows" }
+          if (Test-Path "build") { Remove-Item -Recurse -Force "build" }
+          flutter clean
           flutter create --project-name pengumuman_pro --platforms=windows .
         shell: powershell
 
