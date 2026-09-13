@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2019 # <--- INI KUNCI PERBAIKANNYA (Menggunakan Server VS 2019)
+    runs-on: windows-latest # KITA KEMBALI KE SERVER TERCEPAT
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -21,8 +21,12 @@ jobs:
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
-      - name: Create Windows Project Files
-        run: flutter create --project-name pengumuman_pro --platforms=windows .
+      # PERINTAH SAKTI BARU: Hapus folder Windows sisa lama, lalu buat baru yang 100% bersih!
+      - name: Clean and Create Windows Project
+        run: |
+          if (Test-Path -Path "windows") { Remove-Item -Recurse -Force "windows" }
+          flutter create --project-name pengumuman_pro --platforms=windows .
+        shell: powershell
 
       - name: Install Dependencies
         run: flutter pub get
