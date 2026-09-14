@@ -1,152 +1,74 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // <--- INI BARIS YANG SAYA LUPA (BIANG KEROKNYA)
-import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:video_player/video_player.dart';
 import 'package:window_manager/window_manager.dart';
 
-void main(List<String> args) async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
-
-  if (args.firstOrNull == 'multi_window') {
-    final windowId = int.parse(args[1]);
-    runApp(LedApp(windowId: windowId));
-  } else {
-    runApp(const OperatorApp());
-  }
+  runApp(const MainRouter());
 }
 
-// ==========================================
-// BAGIAN 1: APLIKASI OPERATOR
-// ==========================================
-class OperatorApp extends StatelessWidget {
-  const OperatorApp({Key? key}) : super(key: key);
-
+class MainRouter extends StatelessWidget {
+  const MainRouter({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Operator',
+      title: 'Pengumuman Pro',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF0F172A),
       ),
-      home: const OperatorScreen(),
+      home: const RoleSelectionScreen(),
     );
   }
 }
 
-class OperatorScreen extends StatefulWidget {
-  const OperatorScreen({Key? key}) : super(key: key);
-
-  @override
-  State<OperatorScreen> createState() => _OperatorScreenState();
-}
-
-class _OperatorScreenState extends State<OperatorScreen> {
-  int? ledWindowId;
-  String? bgPath;
-  
-  final TextEditingController _juara1Controller = TextEditingController();
-  final TextEditingController _no1Controller = TextEditingController();
-
-  void _openLedWindow() async {
-    final window = await DesktopMultiWindow.createWindow(jsonEncode({}));
-    window
-      ..setFrame(const Offset(0, 0) & const Size(1280, 720))
-      ..center()
-      ..setTitle('Layar LED')
-      ..show();
-    setState(() {
-      ledWindowId = window.windowId;
-    });
-  }
-
-  void _pickBackground() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.media,
-    );
-
-    if (result != null) {
-      setState(() {
-        bgPath = result.files.single.path;
-      });
-      _sendDataToLed('update_bg', {'path': bgPath});
-    }
-  }
-
-  void _sendDataToLed(String action, Map<String, dynamic> data) {
-    if (ledWindowId != null) {
-      data['action'] = action;
-      DesktopMultiWindow.invokeMethod(ledWindowId!, 'onReceiveData', jsonEncode(data));
-    }
-  }
+// ==========================================
+// MENU PEMILIHAN PERAN AWAL
+// ==========================================
+class RoleSelectionScreen extends StatelessWidget {
+  const RoleSelectionScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Operator - Pengumuman Pemenang', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1E293B),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+      body: Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const Text('PILIH PERAN JENDELA INI', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2)),
+            const SizedBox(height: 40),
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.monitor),
-                  label: const Text('BUKA LAYAR 2 (LED)'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.all(20)),
-                  onPressed: _openLedWindow,
-                ),
-                const SizedBox(width: 20),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.video_library),
-                  label: const Text('PILIH BACKGROUND'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, padding: const EdgeInsets.all(20)),
-                  onPressed: _pickBackground,
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(bgPath != null ? '✅ Tersimpan: $bgPath' : '❌ Background belum dipilih', style: const TextStyle(color: Colors.grey)),
-            const Divider(height: 40, color: Colors.grey),
-            
-            const Text('Panel Tayang:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _no1Controller,
-                    decoration: const InputDecoration(labelText: 'Nomor Dada', border: OutlineInputBorder()),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 3,
-                  child: TextField(
-                    controller: _juara1Controller,
-                    decoration: const InputDecoration(labelText: 'Nama Juara 1', border: OutlineInputBorder()),
-                  ),
-                ),
-                const SizedBox(width: 10),
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue, padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+                  ),
                   onPressed: () {
-                    _sendDataToLed('show_winner', {
-                      'juara1': _juara1Controller.text,
-                      'nomor': _no1Controller.text,
-                    });
+                    windowManager.setTitle('Operator - Panel Kontrol');
+                    windowManager.setSize(const Size(1000, 700));
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const OperatorScreen()));
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, padding: const EdgeInsets.all(20)),
-                  child: const Text('TAYANG JUARA 1', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                  child: const Text('MASUK SEBAGAI OPERATOR', style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(width: 30),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green, padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+                  ),
+                  onPressed: () {
+                    windowManager.setTitle('Layar LED Utama');
+                    windowManager.setFullScreen(true);
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LedScreen()));
+                  },
+                  child: const Text('MASUK SEBAGAI LAYAR LED', style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
-            ),
+            )
           ],
         ),
       ),
@@ -155,122 +77,233 @@ class _OperatorScreenState extends State<OperatorScreen> {
 }
 
 // ==========================================
-// BAGIAN 2: APLIKASI LED
+// APLIKASI OPERATOR (MENGIRIM DATA)
 // ==========================================
-class LedApp extends StatelessWidget {
-  final int windowId;
-  const LedApp({Key? key, required this.windowId}) : super(key: key);
-
+class OperatorScreen extends StatefulWidget {
+  const OperatorScreen({Key? key}) : super(key: key);
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: LedScreen(windowId: windowId),
-    );
-  }
+  State<OperatorScreen> createState() => _OperatorScreenState();
 }
 
-class LedScreen extends StatefulWidget {
-  final int windowId;
-  const LedScreen({Key? key, required this.windowId}) : super(key: key);
+class _OperatorScreenState extends State<OperatorScreen> {
+  String? bgPath;
+  final _j1Nama = TextEditingController(); final _j1No = TextEditingController();
+  final _j2Nama = TextEditingController(); final _j2No = TextEditingController();
+  final _j3Nama = TextEditingController(); final _j3No = TextEditingController();
+  final _kat = TextEditingController();
 
-  @override
-  State<LedScreen> createState() => _LedScreenState();
-}
-
-class _LedScreenState extends State<LedScreen> {
-  VideoPlayerController? _videoController;
-  String winnerName = "-";
-  String winnerNo = "-";
-  bool isImage = false;
-  String imagePath = "";
-
-  @override
-  void initState() {
-    super.initState();
-    DesktopMultiWindow.setMethodHandler(_handleMethodCall);
-  }
-
-  Future<dynamic> _handleMethodCall(MethodCall call, int fromWindowId) async {
-    if (call.method == 'onReceiveData') {
-      final data = jsonDecode(call.arguments.toString());
-      
-      if (data['action'] == 'update_bg') {
-        _playMedia(data['path']);
-      } else if (data['action'] == 'show_winner') {
-        setState(() {
-          winnerName = data['juara1'];
-          winnerNo = data['nomor'];
-        });
+  // FUNGSI MENGIRIM DATA KE LAYAR LED VIA LOCALHOST
+  Future<void> sendToLed(Map<String, dynamic> data) async {
+    try {
+      final client = HttpClient();
+      final request = await client.postUrl(Uri.parse('http://127.0.0.1:49200'));
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode(data));
+      await request.close();
+    } catch (e) {
+      if(mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal mengirim! Pastikan Jendela Layar LED sudah dibuka.', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red));
       }
     }
   }
 
-  void _playMedia(String path) {
-    final ext = path.split('.').last.toLowerCase();
-    if (['mp4', 'webm', 'mov'].contains(ext)) {
-      setState(() => isImage = false);
-      _videoController?.dispose();
-      _videoController = VideoPlayerController.file(File(path))
-        ..initialize().then((_) {
-          _videoController!.setLooping(true);
-          _videoController!.play();
-          setState(() {});
-        });
-    } else {
-      setState(() {
-        isImage = true;
-        imagePath = path;
-        _videoController?.dispose();
-        _videoController = null;
-      });
+  void _pickBackground() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.media);
+    if (result != null) {
+      setState(() => bgPath = result.files.single.path);
+      sendToLed({'action': 'update_bg', 'path': bgPath});
     }
-  }
-
-  @override
-  void dispose() {
-    _videoController?.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text('Operator Kontrol'), backgroundColor: const Color(0xFF1E293B)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ElevatedButton.icon(
+              icon: const Icon(Icons.folder), label: const Text('PILIH BACKGROUND (VIDEO/GAMBAR)'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, padding: const EdgeInsets.all(20)),
+              onPressed: _pickBackground,
+            ),
+            const SizedBox(height: 10),
+            Text(bgPath != null ? 'Background Aktif: $bgPath' : 'Belum ada background', style: const TextStyle(color: Colors.amber)),
+            const Divider(height: 40, color: Colors.grey),
+            
+            TextField(controller: _kat, decoration: const InputDecoration(labelText: 'Kategori Lomba (Opsional)', border: OutlineInputBorder()), style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            
+            _buildInputRow('JUARA 1', _j1No, _j1Nama, Colors.amber, 'show_j1'),
+            const SizedBox(height: 15),
+            _buildInputRow('JUARA 2', _j2No, _j2Nama, Colors.blueGrey, 'show_j2'),
+            const SizedBox(height: 15),
+            _buildInputRow('JUARA 3', _j3No, _j3Nama, Colors.deepOrange, 'show_j3'),
+            
+            const SizedBox(height: 30),
+            Row(
+              children: [
+                Expanded(child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, padding: const EdgeInsets.all(20)),
+                  onPressed: () => sendToLed({
+                    'action': 'show_all', 'kat': _kat.text,
+                    'j1no': _j1No.text, 'j1nama': _j1Nama.text,
+                    'j2no': _j2No.text, 'j2nama': _j2Nama.text,
+                    'j3no': _j3No.text, 'j3nama': _j3Nama.text,
+                  }),
+                  child: const Text('TAYANGKAN SEMUA (PODIUM)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                )),
+                const SizedBox(width: 10),
+                Expanded(child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, padding: const EdgeInsets.all(20)),
+                  onPressed: () => sendToLed({'action': 'clear'}),
+                  child: const Text('BERSIHKAN LAYAR (CLEAR)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                )),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputRow(String title, TextEditingController noCtrl, TextEditingController namaCtrl, Color col, String action) {
+    return Row(
+      children: [
+        SizedBox(width: 100, child: Text(title, style: TextStyle(color: col, fontWeight: FontWeight.bold, fontSize: 16))),
+        Expanded(child: TextField(controller: noCtrl, decoration: const InputDecoration(labelText: 'No. Dada', border: OutlineInputBorder()))),
+        const SizedBox(width: 10),
+        Expanded(flex: 3, child: TextField(controller: namaCtrl, decoration: const InputDecoration(labelText: 'Nama Pemenang', border: OutlineInputBorder()))),
+        const SizedBox(width: 10),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: col, padding: const EdgeInsets.all(20)),
+          onPressed: () => sendToLed({'action': action, 'kat': _kat.text, 'no': noCtrl.text, 'nama': namaCtrl.text}),
+          child: Text('TAYANG $title', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        ),
+      ],
+    );
+  }
+}
+
+// ==========================================
+// APLIKASI LAYAR LED (MENERIMA DATA)
+// ==========================================
+class LedScreen extends StatefulWidget {
+  const LedScreen({Key? key}) : super(key: key);
+  @override
+  State<LedScreen> createState() => _LedScreenState();
+}
+
+class _LedScreenState extends State<LedScreen> {
+  HttpServer? _server;
+  VideoPlayerController? _videoCtrl;
+  String imagePath = "";
+  Map<String, dynamic> _data = {'action': 'clear'};
+
+  @override
+  void initState() {
+    super.initState();
+    _startServer();
+  }
+
+  // MENJALANKAN SERVER LOKAL DI PORT 49200
+  void _startServer() async {
+    _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 49200);
+    _server!.listen((HttpRequest request) async {
+      final content = await utf8.decoder.bind(request).join();
+      final data = jsonDecode(content);
+      
+      if (data['action'] == 'update_bg') {
+        _updateMedia(data['path']);
+      } else {
+        setState(() { _data = data; });
+      }
+      request.response.write('OK');
+      request.response.close();
+    });
+  }
+
+  void _updateMedia(String path) {
+    final ext = path.split('.').last.toLowerCase();
+    if (['mp4', 'webm', 'mov', 'avi'].contains(ext)) {
+      setState(() => imagePath = "");
+      _videoCtrl?.dispose();
+      _videoCtrl = VideoPlayerController.file(File(path))..initialize().then((_) {
+        _videoCtrl!.setLooping(true); _videoCtrl!.play(); setState(() {});
+      });
+    } else {
+      setState(() { imagePath = path; _videoCtrl?.dispose(); _videoCtrl = null; });
+    }
+  }
+
+  @override
+  void dispose() { _server?.close(); _videoCtrl?.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    final act = _data['action'] ?? 'clear';
+    return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          if (!isImage && _videoController != null && _videoController!.value.isInitialized)
-            FittedBox(
-              fit: BoxFit.cover,
-              child: SizedBox(
-                width: _videoController!.value.size.width,
-                height: _videoController!.value.size.height,
-                child: VideoPlayer(_videoController!),
-              ),
-            ),
-          if (isImage && imagePath.isNotEmpty)
-            Image.file(File(imagePath), fit: BoxFit.cover),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 40),
-              decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.white, width: 4),
-                boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 20)],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('JUARA 1', style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.black87)),
-                  Text(winnerNo, style: const TextStyle(fontSize: 50, fontFamily: 'monospace', color: Colors.white)),
-                  Text(winnerName, style: const TextStyle(fontSize: 80, fontWeight: FontWeight.w900, color: Colors.white, shadows: [Shadow(color: Colors.black, blurRadius: 5)])),
-                ],
-              ),
-            ),
-          ),
+          // BACKGROUND MEDIA
+          if (imagePath.isEmpty && _videoCtrl != null && _videoCtrl!.value.isInitialized)
+            FittedBox(fit: BoxFit.cover, child: SizedBox(width: _videoCtrl!.value.size.width, height: _videoCtrl!.value.size.height, child: VideoPlayer(_videoCtrl!))),
+          if (imagePath.isNotEmpty) Image.file(File(imagePath), fit: BoxFit.cover),
+          
+          // FOREGROUND UI
+          if (act != 'clear') 
+            Center(
+              child: act == 'show_all' ? _buildAll() : _buildSingle(act),
+            )
         ],
+      ),
+    );
+  }
+
+  Widget _buildSingle(String act) {
+    String title = act == 'show_j1' ? 'JUARA 1' : (act == 'show_j2' ? 'JUARA 2' : 'JUARA 3');
+    Color col = act == 'show_j1' ? Colors.amber : (act == 'show_j2' ? Colors.blueGrey : Colors.deepOrange);
+    return _buildCard(title, _data['no'] ?? '-', _data['nama'] ?? '-', col, 1.2);
+  }
+
+  Widget _buildAll() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        _buildCard('JUARA 3', _data['j3no'], _data['j3nama'], Colors.deepOrange, 0.8),
+        const SizedBox(width: 20),
+        Padding(padding: const EdgeInsets.only(bottom: 40), child: _buildCard('JUARA 1', _data['j1no'], _data['j1nama'], Colors.amber, 1.1)),
+        const SizedBox(width: 20),
+        _buildCard('JUARA 2', _data['j2no'], _data['j2nama'], Colors.blueGrey, 0.8),
+      ],
+    );
+  }
+
+  Widget _buildCard(String title, String? no, String? nama, Color color, double scale) {
+    return Transform.scale(
+      scale: scale,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 30),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white, width: 3),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if(_data['kat'] != null && _data['kat'].toString().isNotEmpty)
+               Text(_data['kat'], style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 2)),
+            Text(title, style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.black87)),
+            Text(no ?? '-', style: const TextStyle(fontSize: 40, fontFamily: 'monospace', color: Colors.white)),
+            Text(nama ?? '-', style: const TextStyle(fontSize: 60, fontWeight: FontWeight.w900, color: Colors.white, shadows: [Shadow(color: Colors.black54, blurRadius: 4)])),
+          ],
+        ),
       ),
     );
   }
