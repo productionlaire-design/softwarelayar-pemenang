@@ -155,6 +155,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
     }
   }
 
+  // --- BUKA JENDELA KEDUA DENGAN AMAN ---
   void _openLedWindow() async {
     final window = await DesktopMultiWindow.createWindow(jsonEncode({}));
     window..setFrame(const Offset(0, 0) & const Size(1280, 720))..setTitle('LAIRE CREATIVE STUDIO - LED')..show();
@@ -247,7 +248,12 @@ class _OperatorScreenState extends State<OperatorScreen> {
           ],
         ),
         actions: [
-          ElevatedButton.icon(icon: const Icon(Icons.monitor, color: Colors.white), label: const Text('BUKA LAYAR LED', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)), style: ElevatedButton.styleFrom(backgroundColor: Colors.teal), onPressed: _openLedWindow),
+          // INFO KLIK 2X UNTUK FULLSCREEN
+          const Padding(
+            padding: EdgeInsets.only(right: 15, top: 18),
+            child: Text('*Klik 2x pada Layar Ke-2 untuk Fullscreen', style: TextStyle(color: Colors.yellow, fontSize: 12, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
+          ),
+          ElevatedButton.icon(icon: const Icon(Icons.monitor, color: Colors.white), label: const Text('BUKA LAYAR KE-2', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)), style: ElevatedButton.styleFrom(backgroundColor: Colors.teal), onPressed: _openLedWindow),
           const SizedBox(width: 20),
         ],
       ),
@@ -387,7 +393,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
             ),
           ),
 
-          // ==================== KOLOM 3: KUSTOMISASI (SISTEM TAB) ====================
+          // ==================== KOLOM 3: KUSTOMISASI ====================
           Expanded(
             flex: 3,
             child: DefaultTabController(
@@ -408,7 +414,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
                             const Text('Background & Animasi', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white70)),
                             const SizedBox(height: 10),
                             ElevatedButton.icon(icon: const Icon(Icons.wallpaper), label: const Text('Pilih Background (Video/Img)'), style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, minimumSize: const Size(double.infinity, 45)), onPressed: _pickBackground),
-                            Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Text(isVideoError ? 'Video Error (Gunakan Format Standar)' : (bgPath ?? 'Tidak ada background'), style: TextStyle(fontSize: 10, color: isVideoError ? Colors.red : Colors.grey), maxLines: 2)),
+                            Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Text(isVideoError ? 'Format Video Ditolak (Gunakan .MP4 / .MKV)' : (bgPath ?? 'Tidak ada background'), style: TextStyle(fontSize: 10, color: isVideoError ? Colors.red : Colors.grey), maxLines: 2)),
                             const SizedBox(height: 10),
                             DropdownButtonFormField<String>(
                               value: animStyle, decoration: const InputDecoration(isDense: true, labelText: 'Gaya Animasi Masuk', border: OutlineInputBorder()),
@@ -559,7 +565,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
 }
 
 // ==========================================
-// BAGIAN 2: APLIKASI LED
+// BAGIAN 2: APLIKASI LED (JENDELA KEDUA)
 // ==========================================
 class LedApp extends StatelessWidget {
   final int windowId;
@@ -590,11 +596,14 @@ class _LedScreenState extends State<LedScreen> {
   @override
   void initState() {
     super.initState();
-    _setFullscreen();
     DesktopMultiWindow.setMethodHandler(_handleMethodCall);
   }
 
-  Future<void> _setFullscreen() async { await windowManager.setFullScreen(true); }
+  // --- SENSOR KLIK 2X UNTUK FULLSCREEN ---
+  void _toggleFullscreen() async {
+    bool isFull = await windowManager.isFullScreen();
+    await windowManager.setFullScreen(!isFull);
+  }
 
   Future<dynamic> _handleMethodCall(MethodCall call, int fromWindowId) async {
     if (call.method == 'onReceiveData') {
@@ -632,18 +641,22 @@ class _LedScreenState extends State<LedScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // MEMAKAI VLC ENGINE
-          if (isVideo && _videoCtrl != null)
-            Video(controller: _videoCtrl!, fit: BoxFit.cover, controls: (s) => const SizedBox.shrink())
-          else if (!isVideo && activeBg != null)
-            Image.file(File(activeBg!), key: ValueKey(activeBg), fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.black)),
-          
-          if (d.isNotEmpty)
-            LedCanvasWidget(d: d, action: currentAction)
-        ],
+      body: GestureDetector(
+        // SENSOR KLIK 2X DIPASANG DI SINI
+        onDoubleTap: _toggleFullscreen,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // MEMAKAI VLC ENGINE
+            if (isVideo && _videoCtrl != null)
+              Video(controller: _videoCtrl!, fit: BoxFit.cover, controls: (s) => const SizedBox.shrink())
+            else if (!isVideo && activeBg != null)
+              Image.file(File(activeBg!), key: ValueKey(activeBg), fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.black)),
+            
+            if (d.isNotEmpty)
+              LedCanvasWidget(d: d, action: currentAction)
+          ],
+        ),
       ),
     );
   }
