@@ -207,7 +207,8 @@ class _OperatorScreenState extends State<OperatorScreen> {
           Expanded(
             flex: 3,
             child: Container(
-              padding: const EdgeInsets.all(15), border: const Border(right: BorderSide(color: Colors.white12)),
+              padding: const EdgeInsets.all(15), 
+              decoration: const BoxDecoration(border: Border(right: BorderSide(color: Colors.white12))), // <-- INI PERBAIKANNYA
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -269,7 +270,8 @@ class _OperatorScreenState extends State<OperatorScreen> {
           Expanded(
             flex: 4,
             child: Container(
-              padding: const EdgeInsets.all(15), border: const Border(right: BorderSide(color: Colors.white12)),
+              padding: const EdgeInsets.all(15), 
+              decoration: const BoxDecoration(border: Border(right: BorderSide(color: Colors.white12))), // <-- INI PERBAIKANNYA
               child: Column(
                 children: [
                   const Text('2. PREVIEW & KONTROL', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
@@ -392,7 +394,6 @@ class _OperatorScreenState extends State<OperatorScreen> {
     );
   }
 
-  // WIDGET MAGIC: Men-scale UI asli menjadi Preview 16:9
   Widget _buildPreviewScreen(Map<String, dynamic> data, String action) {
     return AspectRatio(
       aspectRatio: 16 / 9,
@@ -408,7 +409,6 @@ class _OperatorScreenState extends State<OperatorScreen> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Tampilkan Gambar/Video di Preview
                     if (bgPath != null)
                       (bgPath!.toLowerCase().endsWith('.mp4') || bgPath!.toLowerCase().endsWith('.mov'))
                         ? (_previewVideoCtrl != null && _previewVideoCtrl!.value.isInitialized)
@@ -525,8 +525,7 @@ class _LedScreenState extends State<LedScreen> {
 }
 
 // ==========================================
-// KANVAS PEMENANG (Bisa dipakai di Preview & Layar Asli)
-// Memiliki Animasi Kemunculan
+// KANVAS PEMENANG
 // ==========================================
 class LedCanvasWidget extends StatelessWidget {
   final Map<String, dynamic> d;
