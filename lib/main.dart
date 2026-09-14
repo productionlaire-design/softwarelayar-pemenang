@@ -6,11 +6,13 @@ import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:window_manager/window_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
-  MediaKit.ensureInitialized();
+  await windowManager.ensureInitialized();
+  MediaKit.ensureInitialized(); // INIT MESIN VLC
 
   if (args.firstOrNull == 'multi_window') {
     final windowId = int.parse(args[1]);
@@ -586,7 +588,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
 }
 
 // ==========================================
-// BAGIAN 2: APLIKASI LED (MURNI TANPA WINDOW_MANAGER CRASH)
+// BAGIAN 2: APLIKASI LED (MURNI TANPA ERROR)
 // ==========================================
 class LedApp extends StatelessWidget {
   final int windowId;
@@ -610,7 +612,6 @@ class LedScreen extends StatefulWidget {
 }
 
 class _LedScreenState extends State<LedScreen> {
-  late final WindowController _windowController;
   Player? _player;
   VideoController? _videoCtrl;
   Map<String, dynamic> d = {}; 
@@ -621,7 +622,6 @@ class _LedScreenState extends State<LedScreen> {
   @override
   void initState() {
     super.initState();
-    _windowController = WindowController.fromWindowId(widget.windowId);
     DesktopMultiWindow.setMethodHandler(_handleMethodCall);
   }
 
@@ -667,6 +667,7 @@ class _LedScreenState extends State<LedScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
+          // MEMAKAI VLC ENGINE
           if (isVideo && _videoCtrl != null)
             Video(controller: _videoCtrl!, fit: BoxFit.cover, controls: (s) => const SizedBox.shrink())
           else if (!isVideo && activeBg != null)
@@ -674,20 +675,6 @@ class _LedScreenState extends State<LedScreen> {
           
           if (d.isNotEmpty)
             LedCanvasWidget(d: d, action: currentAction),
-
-          // TOMBOL MAKSIMALKAN / FULLSCREEN KHUSUS JENDELA KEDUA (MURNI & AMAN)
-          Positioned(
-            top: 15,
-            right: 15,
-            child: Opacity(
-              opacity: 0.3,
-              child: IconButton(
-                icon: const Icon(Icons.fullscreen, color: Colors.white, size: 28),
-                onPressed: () => _windowController.maximize(),
-                tooltip: 'Maksimalkan Layar',
-              ),
-            ),
-          )
         ],
       ),
     );
