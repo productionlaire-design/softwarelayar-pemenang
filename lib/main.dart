@@ -6,18 +6,16 @@ import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:window_manager/window_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
-  MediaKit.ensureInitialized(); 
+  MediaKit.ensureInitialized(); // INIT MESIN VLC, BEBAS ERROR WINDOW MANAGER
 
   if (args.firstOrNull == 'multi_window') {
     final windowId = int.parse(args[1]);
     runApp(LedApp(windowId: windowId));
   } else {
-    await windowManager.ensureInitialized();
     runApp(const OperatorApp());
   }
 }
@@ -71,12 +69,14 @@ class _OperatorScreenState extends State<OperatorScreen> {
   String liveAction = 'clear';
   bool showHadiah = true;
 
+  // --- DATA INPUT ---
   final _mainTitleCtrl = TextEditingController(text: 'PEMENANG LOMBA');
   final _katCtrl = TextEditingController();
   final _j1noCtrl = TextEditingController(); final _j1namaCtrl = TextEditingController(); final _j1hadiahCtrl = TextEditingController();
   final _j2noCtrl = TextEditingController(); final _j2namaCtrl = TextEditingController(); final _j2hadiahCtrl = TextEditingController();
   final _j3noCtrl = TextEditingController(); final _j3namaCtrl = TextEditingController(); final _j3hadiahCtrl = TextEditingController();
 
+  // --- SETTINGS ---
   String animStyle = 'bounce';
   String boxStyle = 'rounded_border'; 
   String fTitle = 'Impact'; String fKat = 'Segoe UI'; String fBox = 'Segoe UI';
@@ -154,15 +154,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
   }
 
   void _openLedWindow() async {
-    if (ledWindowId != null) {
-      try {
-        final controller = WindowController.fromWindowId(ledWindowId!);
-        await controller.show();
-        return;
-      } catch (_) {
-        ledWindowId = null;
-      }
-    }
+    if (ledWindowId != null) return; // Cegah membuka jendela berkali-kali
 
     final window = await DesktopMultiWindow.createWindow(jsonEncode({}));
     window
