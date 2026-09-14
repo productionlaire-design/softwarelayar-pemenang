@@ -4,13 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:video_player/video_player.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
+  MediaKit.ensureInitialized(); // INIT MESIN VLC
 
   if (args.firstOrNull == 'multi_window') {
     final windowId = int.parse(args[1]);
@@ -58,7 +60,10 @@ class _OperatorScreenState extends State<OperatorScreen> {
   int? ledWindowId;
   String? bgPath;
   List<Map<String, String>> queue = [];
-  VideoPlayerController? _previewVideoCtrl;
+  
+  // Mesin VLC Video
+  Player? _previewPlayer;
+  VideoController? _previewVideoCtrl;
   bool isVideoError = false;
   
   Map<String, dynamic> standbyData = {};
@@ -75,7 +80,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
 
   // --- SETTINGS ---
   String animStyle = 'bounce';
-  String boxStyle = 'rounded_border'; // GAYA BENTUK KOTAK
+  String boxStyle = 'rounded_border'; 
   String fTitle = 'Impact'; String fKat = 'Segoe UI'; String fBox = 'Segoe UI';
   double sMainTitle = 80; double sMainTitleY = 0;
   Color cKat = Colors.black87; double opKat = 0.8;
@@ -130,21 +135,22 @@ class _OperatorScreenState extends State<OperatorScreen> {
 
   void _initPreviewVideo(String path) async {
     isVideoError = false;
-    if (path.toLowerCase().endsWith('.mp4') || path.toLowerCase().endsWith('.mov') || path.toLowerCase().endsWith('.avi')) {
-      _previewVideoCtrl?.dispose();
-      _previewVideoCtrl = VideoPlayerController.file(File(path));
+    final ext = path.toLowerCase().split('.').last;
+    if (['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv'].contains(ext)) {
+      _previewPlayer?.dispose();
+      _previewPlayer = Player();
+      _previewVideoCtrl = VideoController(_previewPlayer!);
       try {
-        await _previewVideoCtrl!.initialize();
-        await _previewVideoCtrl!.setVolume(0.0); 
-        await _previewVideoCtrl!.setLooping(true);
-        await _previewVideoCtrl!.play();
+        await _previewPlayer!.setVolume(0.0); 
+        await _previewPlayer!.setPlaylistMode(PlaylistMode.single);
+        await _previewPlayer!.open(Media(path));
         if(mounted) setState(() {});
       } catch (e) {
         isVideoError = true;
         if(mounted) setState(() {});
       }
     } else {
-      _previewVideoCtrl?.dispose(); _previewVideoCtrl = null;
+      _previewPlayer?.dispose(); _previewPlayer = null; _previewVideoCtrl = null;
       if(mounted) setState(() {});
     }
   }
@@ -157,7 +163,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
   }
 
   void _pickBackground() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['mp4', 'mov', 'avi', 'jpg', 'jpeg', 'png']);
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['mp4', 'mov', 'avi', 'mkv', 'webm', 'jpg', 'jpeg', 'png']);
     if (result != null) {
       setState(() { bgPath = result.files.single.path; });
       _initPreviewVideo(bgPath!); _saveSettings();
@@ -402,7 +408,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
                             const Text('Background & Animasi', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white70)),
                             const SizedBox(height: 10),
                             ElevatedButton.icon(icon: const Icon(Icons.wallpaper), label: const Text('Pilih Background (Video/Img)'), style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, minimumSize: const Size(double.infinity, 45)), onPressed: _pickBackground),
-                            Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Text(isVideoError ? 'Format Video Ditolak (Pastikan file berformat .MP4 H264)' : (bgPath ?? 'Tidak ada background'), style: TextStyle(fontSize: 10, color: isVideoError ? Colors.red : Colors.grey), maxLines: 2)),
+                            Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Text(isVideoError ? 'Video Error (Gunakan Format Standar)' : (bgPath ?? 'Tidak ada background'), style: TextStyle(fontSize: 10, color: isVideoError ? Colors.red : Colors.grey), maxLines: 2)),
                             const SizedBox(height: 10),
                             DropdownButtonFormField<String>(
                               value: animStyle, decoration: const InputDecoration(isDense: true, labelText: 'Gaya Animasi Masuk', border: OutlineInputBorder()),
@@ -413,8 +419,8 @@ class _OperatorScreenState extends State<OperatorScreen> {
                             DropdownButtonFormField<String>(
                               value: boxStyle, decoration: const InputDecoration(isDense: true, labelText: 'Bentuk Kotak Pemenang', border: OutlineInputBorder()),
                               items: const [
-                                DropdownMenuItem(value: 'rounded_border', child: Text('Melengkung + Garis Tepi (Bawaan)')), 
-                                DropdownMenuItem(value: 'rounded_no_border', child: Text('Melengkung Polos (Tanpa Garis)')), 
+                                DropdownMenuItem(value: 'rounded_border', child: Text('Melengkung + Garis Tepi')), 
+                                DropdownMenuItem(value: 'rounded_no_border', child: Text('Melengkung Polos')), 
                                 DropdownMenuItem(value: 'square_border', child: Text('Persegi Tajam + Garis Tepi')),
                                 DropdownMenuItem(value: 'square_no_border', child: Text('Persegi Tajam Polos')),
                                 DropdownMenuItem(value: 'pill', child: Text('Kapsul Bulat (Pill Shape)'))
@@ -533,9 +539,9 @@ class _OperatorScreenState extends State<OperatorScreen> {
               fit: StackFit.expand,
               children: [
                 if (bgPath != null)
-                  (bgPath!.toLowerCase().endsWith('.mp4') || bgPath!.toLowerCase().endsWith('.mov') || bgPath!.toLowerCase().endsWith('.avi'))
-                    ? (_previewVideoCtrl != null && _previewVideoCtrl!.value.isInitialized)
-                      ? FittedBox(key: ValueKey(bgPath), fit: BoxFit.cover, child: SizedBox(width: _previewVideoCtrl!.value.size.width, height: _previewVideoCtrl!.value.size.height, child: AspectRatio(aspectRatio: _previewVideoCtrl!.value.aspectRatio, child: VideoPlayer(_previewVideoCtrl!))))
+                  (bgPath!.toLowerCase().endsWith('.mp4') || bgPath!.toLowerCase().endsWith('.mov') || bgPath!.toLowerCase().endsWith('.mkv') || bgPath!.toLowerCase().endsWith('.avi'))
+                    ? (_previewVideoCtrl != null)
+                      ? Video(controller: _previewVideoCtrl!, fit: BoxFit.cover, controls: (s) => const SizedBox.shrink())
                       : const Center(child: Icon(Icons.video_file, color: Colors.white24, size: 50))
                     : Image.file(File(bgPath!), key: ValueKey(bgPath), fit: BoxFit.cover)
                 else
@@ -574,7 +580,8 @@ class LedScreen extends StatefulWidget {
 }
 
 class _LedScreenState extends State<LedScreen> {
-  VideoPlayerController? _videoCtrl;
+  Player? _player;
+  VideoController? _videoCtrl;
   Map<String, dynamic> d = {}; 
   String currentAction = 'clear';
   String? activeBg;
@@ -596,21 +603,21 @@ class _LedScreenState extends State<LedScreen> {
       if (newData['bgPath'] != null && newData['bgPath'] != activeBg) {
         activeBg = newData['bgPath'];
         final ext = activeBg!.split('.').last.toLowerCase();
-        if (['mp4', 'mov', 'avi'].contains(ext)) {
+        if (['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv'].contains(ext)) {
           isVideo = true;
-          _videoCtrl?.dispose();
-          _videoCtrl = VideoPlayerController.file(File(activeBg!));
+          _player?.dispose();
+          _player = Player();
+          _videoCtrl = VideoController(_player!);
           try {
-            await _videoCtrl!.initialize();
-            await _videoCtrl!.setLooping(true);
-            await _videoCtrl!.play();
+            await _player!.setPlaylistMode(PlaylistMode.single);
+            await _player!.open(Media(activeBg!));
             if (mounted) setState(() {});
           } catch (e) {
             isVideo = false;
             if (mounted) setState(() {});
           }
         } else {
-          isVideo = false; _videoCtrl?.dispose(); _videoCtrl = null;
+          isVideo = false; _player?.dispose(); _player = null; _videoCtrl = null;
           if (mounted) setState(() {}); 
         }
       }
@@ -619,7 +626,7 @@ class _LedScreenState extends State<LedScreen> {
   }
 
   @override
-  void dispose() { _videoCtrl?.dispose(); super.dispose(); }
+  void dispose() { _player?.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -628,8 +635,9 @@ class _LedScreenState extends State<LedScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          if (isVideo && _videoCtrl != null && _videoCtrl!.value.isInitialized)
-            FittedBox(key: ValueKey(activeBg), fit: BoxFit.cover, child: SizedBox(width: _videoCtrl!.value.size.width, height: _videoCtrl!.value.size.height, child: AspectRatio(aspectRatio: _videoCtrl!.value.aspectRatio, child: VideoPlayer(_videoCtrl!))))
+          // MEMAKAI VLC ENGINE
+          if (isVideo && _videoCtrl != null)
+            Video(controller: _videoCtrl!, fit: BoxFit.cover, controls: (s) => const SizedBox.shrink())
           else if (!isVideo && activeBg != null)
             Image.file(File(activeBg!), key: ValueKey(activeBg), fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.black)),
           
