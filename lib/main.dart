@@ -6,13 +6,11 @@ import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:window_manager/window_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
-  await windowManager.ensureInitialized();
-  MediaKit.ensureInitialized(); // INIT MESIN VLC
+  MediaKit.ensureInitialized();
 
   if (args.firstOrNull == 'multi_window') {
     final windowId = int.parse(args[1]);
@@ -39,6 +37,7 @@ class OperatorApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'LAIRE CREATIVE STUDIO - Broadcast Pro',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF0F172A),
         cardColor: const Color(0xFF1E293B),
@@ -61,7 +60,6 @@ class _OperatorScreenState extends State<OperatorScreen> {
   String? bgPath;
   List<Map<String, String>> queue = [];
   
-  // Mesin VLC Video
   Player? _previewPlayer;
   VideoController? _previewVideoCtrl;
   bool isVideoError = false;
@@ -155,16 +153,32 @@ class _OperatorScreenState extends State<OperatorScreen> {
     }
   }
 
-  // --- BUKA JENDELA KEDUA DENGAN AMAN ---
   void _openLedWindow() async {
+    if (ledWindowId != null) {
+      try {
+        final controller = WindowController.fromWindowId(ledWindowId!);
+        await controller.show();
+        return;
+      } catch (_) {
+        ledWindowId = null;
+      }
+    }
+
     final window = await DesktopMultiWindow.createWindow(jsonEncode({}));
-    window..setFrame(const Offset(0, 0) & const Size(1280, 720))..setTitle('LAIRE CREATIVE STUDIO - LED')..show();
+    window
+      ..setFrame(const Offset(100, 100) & const Size(1280, 720))
+      ..setTitle('LAIRE CREATIVE STUDIO - DISPLAY LED')
+      ..show();
+      
     setState(() { ledWindowId = window.windowId; });
-    Future.delayed(const Duration(milliseconds: 500), () => _sendToLed('clear'));
+    Future.delayed(const Duration(milliseconds: 600), () => _sendToLed(liveAction));
   }
 
   void _pickBackground() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['mp4', 'mov', 'avi', 'mkv', 'webm', 'jpg', 'jpeg', 'png']);
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom, 
+      allowedExtensions: ['mp4', 'mov', 'avi', 'mkv', 'webm', 'jpg', 'jpeg', 'png']
+    );
     if (result != null) {
       setState(() { bgPath = result.files.single.path; });
       _initPreviewVideo(bgPath!); _saveSettings();
@@ -173,12 +187,17 @@ class _OperatorScreenState extends State<OperatorScreen> {
 
   void _downloadTemplateExcel() async {
     String? outputFile = await FilePicker.platform.saveFile(
-      dialogTitle: 'Simpan Template Excel/CSV', fileName: 'Template_Pemenang_Laire.csv', type: FileType.custom, allowedExtensions: ['csv'],
+      dialogTitle: 'Simpan Template Excel/CSV', 
+      fileName: 'Template_Pemenang_Laire.csv', 
+      type: FileType.custom, 
+      allowedExtensions: ['csv'],
     );
     if (outputFile != null) {
       File f = File(outputFile);
       await f.writeAsString("Kategori,No J1,Nama J1,Hadiah J1,No J2,Nama J2,Hadiah J2,No J3,Nama J3,Hadiah J3\n10K PUTRA,001,Budi,Rp 10.000.000,002,Andi,Rp 7.000.000,003,Cipto,Rp 5.000.000");
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Template berhasil disimpan! Buka dengan Excel.'), backgroundColor: Colors.green));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Template berhasil disimpan! Buka dengan Excel.'), backgroundColor: Colors.green));
+      }
     }
   }
 
@@ -197,7 +216,9 @@ class _OperatorScreenState extends State<OperatorScreen> {
         }
         setState(() {});
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error baca file: $e'), backgroundColor: Colors.red));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error baca file: $e'), backgroundColor: Colors.red));
+        }
       }
     }
   }
@@ -248,12 +269,12 @@ class _OperatorScreenState extends State<OperatorScreen> {
           ],
         ),
         actions: [
-          // INFO KLIK 2X UNTUK FULLSCREEN
-          const Padding(
-            padding: EdgeInsets.only(right: 15, top: 18),
-            child: Text('*Klik 2x pada Layar Ke-2 untuk Fullscreen', style: TextStyle(color: Colors.yellow, fontSize: 12, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.open_in_new, color: Colors.white), 
+            label: const Text('BUKA DISPLAY LED', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)), 
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal), 
+            onPressed: _openLedWindow
           ),
-          ElevatedButton.icon(icon: const Icon(Icons.monitor, color: Colors.white), label: const Text('BUKA LAYAR KE-2', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)), style: ElevatedButton.styleFrom(backgroundColor: Colors.teal), onPressed: _openLedWindow),
           const SizedBox(width: 20),
         ],
       ),
@@ -273,7 +294,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
                     children: [
                       Expanded(child: ElevatedButton.icon(icon: const Icon(Icons.file_upload, size: 18), label: const Text('Import CSV', style: TextStyle(fontSize: 12)), style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo), onPressed: _importCSV)),
                       const SizedBox(width: 5),
-                      Expanded(child: ElevatedButton.icon(icon: const Icon(Icons.download, size: 18), label: const Text('Download Template', style: TextStyle(fontSize: 12)), style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: _downloadTemplateExcel)),
+                      Expanded(child: ElevatedButton.icon(icon: const Icon(Icons.download, size: 18), label: const Text('Template', style: TextStyle(fontSize: 12)), style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: _downloadTemplateExcel)),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -377,7 +398,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  const Align(alignment: Alignment.centerLeft, child: Text('LIVE OUTPUT (Sesuai Layar LED)', style: TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.bold))),
+                  const Align(alignment: Alignment.centerLeft, child: Text('LIVE OUTPUT (Preview Layar LED)', style: TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.bold))),
                   const SizedBox(height: 10),
                   Expanded(
                     child: Center(
@@ -413,8 +434,8 @@ class _OperatorScreenState extends State<OperatorScreen> {
                           children: [
                             const Text('Background & Animasi', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white70)),
                             const SizedBox(height: 10),
-                            ElevatedButton.icon(icon: const Icon(Icons.wallpaper), label: const Text('Pilih Background (Video/Img)'), style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, minimumSize: const Size(double.infinity, 45)), onPressed: _pickBackground),
-                            Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Text(isVideoError ? 'Format Video Ditolak (Gunakan .MP4 / .MKV)' : (bgPath ?? 'Tidak ada background'), style: TextStyle(fontSize: 10, color: isVideoError ? Colors.red : Colors.grey), maxLines: 2)),
+                            ElevatedButton.icon(icon: const Icon(Icons.wallpaper), label: const Text('Pilih Background Video/Img'), style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, minimumSize: const Size(double.infinity, 45)), onPressed: _pickBackground),
+                            Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Text(isVideoError ? 'Format Video Ditolak' : (bgPath ?? 'Tidak ada background'), style: TextStyle(fontSize: 10, color: isVideoError ? Colors.red : Colors.grey), maxLines: 2)),
                             const SizedBox(height: 10),
                             DropdownButtonFormField<String>(
                               value: animStyle, decoration: const InputDecoration(isDense: true, labelText: 'Gaya Animasi Masuk', border: OutlineInputBorder()),
@@ -565,7 +586,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
 }
 
 // ==========================================
-// BAGIAN 2: APLIKASI LED (JENDELA KEDUA)
+// BAGIAN 2: APLIKASI LED (MURNI TANPA WINDOW_MANAGER CRASH)
 // ==========================================
 class LedApp extends StatelessWidget {
   final int windowId;
@@ -573,7 +594,10 @@ class LedApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: LedScreen(windowId: windowId));
+    return MaterialApp(
+      debugShowCheckedModeBanner: false, 
+      home: LedScreen(windowId: windowId),
+    );
   }
 }
 
@@ -586,6 +610,7 @@ class LedScreen extends StatefulWidget {
 }
 
 class _LedScreenState extends State<LedScreen> {
+  late final WindowController _windowController;
   Player? _player;
   VideoController? _videoCtrl;
   Map<String, dynamic> d = {}; 
@@ -596,13 +621,8 @@ class _LedScreenState extends State<LedScreen> {
   @override
   void initState() {
     super.initState();
+    _windowController = WindowController.fromWindowId(widget.windowId);
     DesktopMultiWindow.setMethodHandler(_handleMethodCall);
-  }
-
-  // --- SENSOR KLIK 2X UNTUK FULLSCREEN ---
-  void _toggleFullscreen() async {
-    bool isFull = await windowManager.isFullScreen();
-    await windowManager.setFullScreen(!isFull);
   }
 
   Future<dynamic> _handleMethodCall(MethodCall call, int fromWindowId) async {
@@ -635,35 +655,47 @@ class _LedScreenState extends State<LedScreen> {
   }
 
   @override
-  void dispose() { _player?.dispose(); super.dispose(); }
+  void dispose() { 
+    _player?.dispose(); 
+    super.dispose(); 
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: GestureDetector(
-        // SENSOR KLIK 2X DIPASANG DI SINI
-        onDoubleTap: _toggleFullscreen,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // MEMAKAI VLC ENGINE
-            if (isVideo && _videoCtrl != null)
-              Video(controller: _videoCtrl!, fit: BoxFit.cover, controls: (s) => const SizedBox.shrink())
-            else if (!isVideo && activeBg != null)
-              Image.file(File(activeBg!), key: ValueKey(activeBg), fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.black)),
-            
-            if (d.isNotEmpty)
-              LedCanvasWidget(d: d, action: currentAction)
-          ],
-        ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (isVideo && _videoCtrl != null)
+            Video(controller: _videoCtrl!, fit: BoxFit.cover, controls: (s) => const SizedBox.shrink())
+          else if (!isVideo && activeBg != null)
+            Image.file(File(activeBg!), key: ValueKey(activeBg), fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.black)),
+          
+          if (d.isNotEmpty)
+            LedCanvasWidget(d: d, action: currentAction),
+
+          // TOMBOL MAKSIMALKAN / FULLSCREEN KHUSUS JENDELA KEDUA (MURNI & AMAN)
+          Positioned(
+            top: 15,
+            right: 15,
+            child: Opacity(
+              opacity: 0.3,
+              child: IconButton(
+                icon: const Icon(Icons.fullscreen, color: Colors.white, size: 28),
+                onPressed: () => _windowController.maximize(),
+                tooltip: 'Maksimalkan Layar',
+              ),
+            ),
+          )
+        ],
       ),
     );
   }
 }
 
 // ==========================================
-// KANVAS PEMENANG DENGAN CUSTOM GAYA KOTAK
+// KANVAS PEMENANG
 // ==========================================
 class LedCanvasWidget extends StatelessWidget {
   final Map<String, dynamic> d;
@@ -687,7 +719,6 @@ class LedCanvasWidget extends StatelessWidget {
     String safeNo = (no.isEmpty) ? '-' : no;
     String safeName = (name.isEmpty) ? '...' : name;
 
-    // LOGIKA BENTUK KOTAK (ROUNDED / SQUARE / PILL / NO BORDER)
     BorderRadius br = BorderRadius.circular(20);
     if (bStyle.contains('square')) br = BorderRadius.circular(0);
     if (bStyle.contains('pill')) br = BorderRadius.circular(100);
