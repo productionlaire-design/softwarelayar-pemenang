@@ -20,7 +20,7 @@ jobs:
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
-      - name: Force Strict Pubspec Configuration
+      - name: Prepare Pubspec
         run: |
           $pubspec = @"
           name: pengumuman_pro
@@ -46,13 +46,15 @@ jobs:
       - name: Clean and Create Windows Folder
         run: |
           if (Test-Path "windows") { Remove-Item -Recurse -Force "windows" }
+          flutter clean
           flutter create --project-name pengumuman_pro --platforms=windows .
         shell: powershell
 
+      # Langkah ini akan otomatis membuat file "generated_plugin_registrant.h"
       - name: Generate Plugin Registrant
         run: flutter pub get
 
-      # SAYA SUDAH MENGHAPUS BARIS GENERATED_PLUGIN YANG BIKIN ERROR
+      # Menyuntikkan C++ DENGAN baris registrasi plugin yang sebelumnya saya hapus
       - name: Inject Multi-Window C++ Code
         run: |
           $code = @"
@@ -61,6 +63,7 @@ jobs:
           #include <windows.h>
           #include "flutter_window.h"
           #include "utils.h"
+          #include "generated_plugin_registrant.h" 
           #include <desktop_multi_window/desktop_multi_window_plugin.h>
 
           int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t *command_line, _In_ int show_command) {
@@ -84,6 +87,8 @@ jobs:
               return EXIT_FAILURE;
             }
             window.SetQuitOnClose(true);
+
+            RegisterPlugins(&window); 
 
             ::MSG msg;
             while (::GetMessage(&msg, nullptr, 0, 0)) {
