@@ -60,6 +60,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
   String? bgPath;
   List<Map<String, String>> queue = [];
   VideoPlayerController? _previewVideoCtrl;
+  bool isVideoError = false;
   
   Map<String, dynamic> standbyData = {};
   Map<String, dynamic> liveData = {};
@@ -73,15 +74,11 @@ class _OperatorScreenState extends State<OperatorScreen> {
   final _j3noCtrl = TextEditingController(); final _j3namaCtrl = TextEditingController();
 
   // --- SETTINGS ---
-  String animStyle = 'bounce'; // bounce, slide, fade
-  // Fonts
+  String animStyle = 'bounce';
   String fTitle = 'Segoe UI'; String fKat = 'Segoe UI'; String fBox = 'Segoe UI';
-  // Judul
   double sMainTitle = 80; double sMainTitleY = 0;
-  // Kategori
   Color cKat = Colors.black87; double opKat = 0.8;
   double sKat = 35; double sKatPad = 15; double sKatWidth = 250; double sKatY = 0;
-  // Kotak Juara
   Color c1 = Colors.amber; Color c2 = Colors.blueGrey; Color c3 = Colors.deepOrange;
   double opBox = 0.95;
   double sTitleBox = 35; double sNo = 50; double sNama = 65;
@@ -128,15 +125,20 @@ class _OperatorScreenState extends State<OperatorScreen> {
   }
 
   void _initPreviewVideo(String path) async {
+    isVideoError = false;
     if (path.toLowerCase().endsWith('.mp4') || path.toLowerCase().endsWith('.mov') || path.toLowerCase().endsWith('.avi')) {
       _previewVideoCtrl?.dispose();
       _previewVideoCtrl = VideoPlayerController.file(File(path));
       try {
         await _previewVideoCtrl!.initialize();
-        _previewVideoCtrl!.setLooping(true);
-        _previewVideoCtrl!.play();
+        await _previewVideoCtrl!.setVolume(0.0); // MUTE PREVIEW agar tidak dobel suara
+        await _previewVideoCtrl!.setLooping(true);
+        await _previewVideoCtrl!.play();
         if(mounted) setState(() {});
-      } catch (e) { print("Video Error: $e"); }
+      } catch (e) {
+        isVideoError = true;
+        if(mounted) setState(() {});
+      }
     } else {
       _previewVideoCtrl?.dispose(); _previewVideoCtrl = null;
       if(mounted) setState(() {});
@@ -161,12 +163,16 @@ class _OperatorScreenState extends State<OperatorScreen> {
   void _importCSV() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv']);
     if (result != null) {
-      String content = await File(result.files.single.path!).readAsString();
-      for (var line in content.split('\n')) {
-        List<String> cols = line.split(',');
-        if (cols.length >= 7) queue.add({'kat': cols[0].trim(), 'j1no': cols[1].trim(), 'j1nama': cols[2].trim(), 'j2no': cols[3].trim(), 'j2nama': cols[4].trim(), 'j3no': cols[5].trim(), 'j3nama': cols[6].trim()});
+      try {
+        String content = await File(result.files.single.path!).readAsString();
+        for (var line in content.split('\n')) {
+          List<String> cols = line.split(',');
+          if (cols.length >= 7) queue.add({'kat': cols[0].trim(), 'j1no': cols[1].trim(), 'j1nama': cols[2].trim(), 'j2no': cols[3].trim(), 'j2nama': cols[4].trim(), 'j3no': cols[5].trim(), 'j3nama': cols[6].trim()});
+        }
+        setState(() {});
+      } catch (e) {
+        // Abaikan jika error baca file
       }
-      setState(() {});
     }
   }
 
@@ -340,7 +346,10 @@ class _OperatorScreenState extends State<OperatorScreen> {
                     initiallyExpanded: true,
                     children: [
                       ElevatedButton.icon(icon: const Icon(Icons.wallpaper), label: const Text('Pilih Background'), style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, minimumSize: const Size(double.infinity, 40)), onPressed: _pickBackground),
-                      Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Text(bgPath ?? 'Tidak ada background', style: const TextStyle(fontSize: 10, color: Colors.grey), maxLines: 1)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 5), 
+                        child: Text(isVideoError ? 'Format Video Tidak Didukung (Gunakan .MP4)' : (bgPath ?? 'Tidak ada background'), style: TextStyle(fontSize: 10, color: isVideoError ? Colors.red : Colors.grey), maxLines: 1)
+                      ),
                       DropdownButtonFormField<String>(
                         value: animStyle, decoration: const InputDecoration(isDense: true, labelText: 'Gaya Animasi Masuk'),
                         items: const [DropdownMenuItem(value: 'bounce', child: Text('Zoom Membal (Bounce)')), DropdownMenuItem(value: 'slide', child: Text('Slide Terbang (Halus)')), DropdownMenuItem(value: 'fade', child: Text('Fade In (Sederhana)'))],
@@ -522,7 +531,11 @@ class _LedScreenState extends State<LedScreen> {
             await _videoCtrl!.setLooping(true);
             await _videoCtrl!.play();
             if (mounted) setState(() {});
-          } catch (e) { print("Error LED Video: $e"); }
+          } catch (e) {
+            // Safe fallback jika codec video tidak terbaca di OS
+            isVideo = false;
+            if (mounted) setState(() {});
+          }
         } else {
           isVideo = false;
           _videoCtrl?.dispose();
@@ -555,7 +568,7 @@ class _LedScreenState extends State<LedScreen> {
           if (isVideo && _videoCtrl != null && _videoCtrl!.value.isInitialized)
             FittedBox(key: ValueKey(activeBg), fit: BoxFit.cover, child: SizedBox(width: _videoCtrl!.value.size.width, height: _videoCtrl!.value.size.height, child: VideoPlayer(_videoCtrl!)))
           else if (!isVideo && activeBg != null)
-            Image.file(File(activeBg!), key: ValueKey(activeBg), fit: BoxFit.cover),
+            Image.file(File(activeBg!), key: ValueKey(activeBg), fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.black)),
           
           if (d.isNotEmpty)
             LedCanvasWidget(d: d, action: currentAction)
@@ -585,7 +598,7 @@ class LedCanvasWidget extends StatelessWidget {
     double opBox = d['opBox'] ?? 0.95;
     String anim = d['animStyle'] ?? 'bounce';
 
-    // Placeholder jika kosong (Anti Kotak Hitam)
+    // Anti Kotak Hitam: Jika kosong, tetap beri sedikit ruang atau placeholder halus
     String safeNo = (no.isEmpty) ? '-' : no;
     String safeName = (name.isEmpty) ? '...' : name;
 
@@ -612,7 +625,7 @@ class LedCanvasWidget extends StatelessWidget {
     );
 
     return TweenAnimationBuilder<double>(
-      key: ValueKey('${action}_$title'), // Paksa reset animasi tiap diklik
+      key: ValueKey('${action}_$title'), // Reset animasi saat diklik ulang
       tween: Tween(begin: 0.0, end: isVisible ? 1.0 : 0.0),
       duration: const Duration(milliseconds: 800),
       curve: anim == 'bounce' ? Curves.elasticOut : (anim == 'slide' ? Curves.easeOutCubic : Curves.easeIn),
@@ -620,10 +633,9 @@ class LedCanvasWidget extends StatelessWidget {
         if (anim == 'bounce') {
           return Transform.scale(scale: val, child: Opacity(opacity: val.clamp(0.0, 1.0), child: child));
         } else if (anim == 'slide') {
-          return Transform.translate(offset: Offset(0, 150 * (1 - val)), child: Opacity(opacity: val, child: child));
+          return Transform.translate(offset: Offset(0, 150 * (1 - val)), child: Opacity(opacity: val.clamp(0.0, 1.0), child: child));
         } else {
-          // Fade
-          return Opacity(opacity: val, child: child);
+          return Opacity(opacity: val.clamp(0.0, 1.0), child: child);
         }
       },
       child: boxContent,
