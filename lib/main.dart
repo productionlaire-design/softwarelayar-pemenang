@@ -20,13 +20,10 @@ void main(List<String> args) async {
   }
 }
 
-// ==========================================
-// DAFTAR 20 FONT PILIHAN
-// ==========================================
 const List<String> fontChoices = [
   'Segoe UI', 'Impact', 'Arial Black', 'Arial', 'Tahoma', 'Verdana', 
   'Trebuchet MS', 'Georgia', 'Times New Roman', 'Comic Sans MS', 
-  'Courier New', 'Lucida Console', 'Consolas', 'Garamond', 'Palatino Linotype', 
+  'Courier New', 'Consolas', 'Garamond', 'Palatino Linotype', 
   'Calibri', 'Cambria', 'Candara', 'Corbel', 'Constantia'
 ];
 
@@ -76,9 +73,9 @@ class _OperatorScreenState extends State<OperatorScreen> {
   // Settings
   String selectedFont = 'Segoe UI';
   double sScale = 100; double sPosY = 0;
-  double sMainTitle = 70; double sMainTitleY = 0;
-  double sKat = 35; double sTitleBox = 30; double sNo = 50; double sNama = 65;
-  double sWidth = 400; double sPad = 50;
+  double sMainTitle = 80; double sMainTitleY = 0;
+  double sKat = 40; double sTitleBox = 35; double sNo = 50; double sNama = 70;
+  double sWidth = 450; double sPad = 60; double boxOpacity = 0.9;
   Color c1 = Colors.amber; Color c2 = Colors.blueGrey; Color c3 = Colors.deepOrange;
 
   @override
@@ -93,10 +90,11 @@ class _OperatorScreenState extends State<OperatorScreen> {
       _mainTitleCtrl.text = prefs.getString('mainTitle') ?? 'PEMENANG LOMBA';
       selectedFont = prefs.getString('font') ?? 'Segoe UI';
       sScale = prefs.getDouble('sScale') ?? 100; sPosY = prefs.getDouble('sPosY') ?? 0;
-      sMainTitle = prefs.getDouble('sMainTitle') ?? 70; sMainTitleY = prefs.getDouble('sMainTitleY') ?? 0;
-      sKat = prefs.getDouble('sKat') ?? 35; sTitleBox = prefs.getDouble('sTitleBox') ?? 30;
-      sNo = prefs.getDouble('sNo') ?? 50; sNama = prefs.getDouble('sNama') ?? 65;
-      sWidth = prefs.getDouble('sWidth') ?? 400; sPad = prefs.getDouble('sPad') ?? 50;
+      sMainTitle = prefs.getDouble('sMainTitle') ?? 80; sMainTitleY = prefs.getDouble('sMainTitleY') ?? 0;
+      sKat = prefs.getDouble('sKat') ?? 40; sTitleBox = prefs.getDouble('sTitleBox') ?? 35;
+      sNo = prefs.getDouble('sNo') ?? 50; sNama = prefs.getDouble('sNama') ?? 70;
+      sWidth = prefs.getDouble('sWidth') ?? 450; sPad = prefs.getDouble('sPad') ?? 60;
+      boxOpacity = prefs.getDouble('boxOpacity') ?? 0.9;
       c1 = Color(prefs.getInt('c1') ?? Colors.amber.value); c2 = Color(prefs.getInt('c2') ?? Colors.blueGrey.value); c3 = Color(prefs.getInt('c3') ?? Colors.deepOrange.value);
       bgPath = prefs.getString('bgPath');
       if (bgPath != null) _initPreviewVideo(bgPath!);
@@ -113,6 +111,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
     prefs.setDouble('sKat', sKat); prefs.setDouble('sTitleBox', sTitleBox);
     prefs.setDouble('sNo', sNo); prefs.setDouble('sNama', sNama);
     prefs.setDouble('sWidth', sWidth); prefs.setDouble('sPad', sPad);
+    prefs.setDouble('boxOpacity', boxOpacity);
     prefs.setInt('c1', c1.value); prefs.setInt('c2', c2.value); prefs.setInt('c3', c3.value);
     if(bgPath != null) prefs.setString('bgPath', bgPath!);
     _updateStandbyData();
@@ -126,11 +125,11 @@ class _OperatorScreenState extends State<OperatorScreen> {
       await _previewVideoCtrl!.initialize();
       _previewVideoCtrl!.setLooping(true);
       _previewVideoCtrl!.play();
-      setState(() {});
+      if(mounted) setState(() {});
     } else {
       _previewVideoCtrl?.dispose();
       _previewVideoCtrl = null;
-      setState(() {});
+      if(mounted) setState(() {});
     }
   }
 
@@ -175,7 +174,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
         'j2no': _j2noCtrl.text, 'j2nama': _j2namaCtrl.text, 'j3no': _j3noCtrl.text, 'j3nama': _j3namaCtrl.text,
         'sScale': sScale, 'sPosY': sPosY, 'sMainTitle': sMainTitle, 'sMainTitleY': sMainTitleY,
         'sKat': sKat, 'sTitleBox': sTitleBox, 'sNo': sNo, 'sNama': sNama, 'sWidth': sWidth, 'sPad': sPad,
-        'c1': c1.value, 'c2': c2.value, 'c3': c3.value, 'bgPath': bgPath
+        'c1': c1.value, 'c2': c2.value, 'c3': c3.value, 'boxOpacity': boxOpacity, 'bgPath': bgPath
       };
     });
   }
@@ -319,13 +318,16 @@ class _OperatorScreenState extends State<OperatorScreen> {
                   ),
 
                   const SizedBox(height: 30),
-                  // PREVIEW LIVE (HANYA 1 PREVIEW, UKURAN MENYESUAIKAN SISA RUANG)
                   const Align(alignment: Alignment.centerLeft, child: Text('LIVE OUTPUT (Sesuai Layar LED)', style: TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.bold))),
                   const SizedBox(height: 10),
+                  
+                  // PREVIEW YANG DIKUNCI 16:9
                   Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(border: Border.all(color: Colors.redAccent, width: 3), borderRadius: BorderRadius.circular(10), boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.2), blurRadius: 20)]),
-                      child: _buildPreviewScreen(liveAction == 'clear' ? {} : liveData, liveAction),
+                    child: Center(
+                      child: Container(
+                        decoration: BoxDecoration(border: Border.all(color: Colors.redAccent, width: 3), borderRadius: BorderRadius.circular(10), boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.2), blurRadius: 20)]),
+                        child: _buildPreviewScreen(liveAction == 'clear' ? {} : liveData, liveAction),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -371,6 +373,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
                   
                   const Divider(),
                   const Text('Dimensi & Posisi Kotak:', style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.bold)),
+                  _buildSlider('Transparansi Kotak (%)', boxOpacity * 100, 10, 100, (v) => setState(() => boxOpacity = v / 100)),
                   _buildSlider('Skala (Besar/Kecil)', sScale, 50, 150, (v) => setState(() => sScale = v)),
                   _buildSlider('Posisi Y Seluruhnya', sPosY, -500, 500, (v) => setState(() => sPosY = v)),
                   _buildSlider('Lebar Kotak', sWidth, 200, 800, (v) => setState(() => sWidth = v)),
@@ -427,37 +430,33 @@ class _OperatorScreenState extends State<OperatorScreen> {
     );
   }
 
+  // LOGIKA PREVIEW TERKUNCI 16:9 DENGAN FITTEDBOX
   Widget _buildPreviewScreen(Map<String, dynamic> data, String action) {
     return AspectRatio(
       aspectRatio: 16 / 9,
-      child: ClipRect(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            double scale = constraints.maxWidth / 1280.0;
-            return Transform.scale(
-              scale: scale,
-              alignment: Alignment.topLeft,
-              child: SizedBox(
-                width: 1280, height: 720,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (bgPath != null)
-                      (bgPath!.toLowerCase().endsWith('.mp4') || bgPath!.toLowerCase().endsWith('.mov') || bgPath!.toLowerCase().endsWith('.avi'))
-                        ? (_previewVideoCtrl != null && _previewVideoCtrl!.value.isInitialized)
-                          ? FittedBox(key: ValueKey(bgPath), fit: BoxFit.cover, child: SizedBox(width: _previewVideoCtrl!.value.size.width, height: _previewVideoCtrl!.value.size.height, child: VideoPlayer(_previewVideoCtrl!)))
-                          : const Center(child: Icon(Icons.video_file, color: Colors.white24, size: 50))
-                        : Image.file(File(bgPath!), key: ValueKey(bgPath), fit: BoxFit.cover)
-                    else
-                      Container(color: Colors.black),
-                    
-                    if (data.isNotEmpty)
-                      LedCanvasWidget(d: data, action: action)
-                  ],
-                ),
-              ),
-            );
-          },
+      child: Container(
+        color: Colors.black,
+        child: FittedBox(
+          fit: BoxFit.contain, // Memaksa isi canvas 1920x1080 masuk sempurna ke kotak preview
+          child: SizedBox(
+            width: 1920, height: 1080,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (bgPath != null)
+                  (bgPath!.toLowerCase().endsWith('.mp4') || bgPath!.toLowerCase().endsWith('.mov') || bgPath!.toLowerCase().endsWith('.avi'))
+                    ? (_previewVideoCtrl != null && _previewVideoCtrl!.value.isInitialized)
+                      ? FittedBox(key: ValueKey(bgPath), fit: BoxFit.cover, child: SizedBox(width: _previewVideoCtrl!.value.size.width, height: _previewVideoCtrl!.value.size.height, child: VideoPlayer(_previewVideoCtrl!)))
+                      : const Center(child: Icon(Icons.video_file, color: Colors.white24, size: 50))
+                    : Image.file(File(bgPath!), key: ValueKey(bgPath), fit: BoxFit.cover)
+                else
+                  Container(color: Colors.black),
+                
+                if (data.isNotEmpty)
+                  LedCanvasWidget(d: data, action: action)
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -465,7 +464,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
 }
 
 // ==========================================
-// BAGIAN 2: APLIKASI LED & KOMPONEN CANVAS
+// BAGIAN 2: APLIKASI LED
 // ==========================================
 class LedApp extends StatelessWidget {
   final int windowId;
@@ -498,12 +497,11 @@ class _LedScreenState extends State<LedScreen> {
   @override
   void initState() {
     super.initState();
-    _setFullscreen(); // PERINTAH WAJIB FULLSCREEN!
+    _setFullscreen();
     DesktopMultiWindow.setMethodHandler(_handleMethodCall);
   }
 
   Future<void> _setFullscreen() async {
-    // Memaksa window kedua untuk menutupi layar sepenuhnya tanpa border
     await windowManager.setFullScreen(true);
   }
 
@@ -519,20 +517,22 @@ class _LedScreenState extends State<LedScreen> {
           _videoCtrl?.dispose();
           _videoCtrl = VideoPlayerController.file(File(activeBg!));
           await _videoCtrl!.initialize();
-          _videoCtrl!.setLooping(true);
-          _videoCtrl!.play();
-          setState(() {});
+          await _videoCtrl!.setLooping(true);
+          await _videoCtrl!.play();
+          if (mounted) setState(() {});
         } else {
           isVideo = false;
           _videoCtrl?.dispose();
           _videoCtrl = null;
-          setState(() {}); 
+          if (mounted) setState(() {}); 
         }
       }
-      setState(() {
-        currentAction = newData['action'];
-        d = newData;
-      });
+      if (mounted) {
+        setState(() {
+          currentAction = newData['action'];
+          d = newData;
+        });
+      }
     }
   }
 
@@ -549,7 +549,6 @@ class _LedScreenState extends State<LedScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // STABILITAS IMAGE & VIDEO menggunakan ValueKey
           if (isVideo && _videoCtrl != null && _videoCtrl!.value.isInitialized)
             FittedBox(key: ValueKey(activeBg), fit: BoxFit.cover, child: SizedBox(width: _videoCtrl!.value.size.width, height: _videoCtrl!.value.size.height, child: VideoPlayer(_videoCtrl!)))
           else if (!isVideo && activeBg != null)
@@ -564,7 +563,7 @@ class _LedScreenState extends State<LedScreen> {
 }
 
 // ==========================================
-// KANVAS PEMENANG (Logic Centering yang Benar)
+// KANVAS PEMENANG (Dengan Smooth Animation & Anti-Overflow)
 // ==========================================
 class LedCanvasWidget extends StatelessWidget {
   final Map<String, dynamic> d;
@@ -574,56 +573,64 @@ class LedCanvasWidget extends StatelessWidget {
 
   Widget _buildBox(String title, String no, String name, Color col, bool isCenter, bool isVisible) {
     String font = d['font'] ?? 'Segoe UI';
+    double opacity = d['boxOpacity'] ?? 0.9; // Ambil nilai slider transparansi
+
     return AnimatedOpacity(
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeInOut,
+      duration: const Duration(milliseconds: 500),
       opacity: isVisible ? 1.0 : 0.0,
-      child: AnimatedContainer(
+      child: AnimatedSlide(
         duration: const Duration(milliseconds: 700),
-        curve: Curves.easeOutBack,
-        transform: Matrix4.translationValues(0, isVisible ? (isCenter ? -30 : 30) : 150, 0),
-        margin: const EdgeInsets.symmetric(horizontal: 10),
-        padding: EdgeInsets.symmetric(vertical: d['sPad'] ?? 50, horizontal: 20),
-        width: d['sWidth'] ?? 400,
-        decoration: BoxDecoration(
-          color: col.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white, width: isCenter ? 6 : 3),
-          boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 20, spreadRadius: 2)],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(title, style: TextStyle(fontFamily: font, fontSize: d['sTitleBox'] ?? 30, fontWeight: FontWeight.w900, color: Colors.black87, letterSpacing: 2)),
-            const SizedBox(height: 10),
-            Text(no.isEmpty ? '-' : no, style: TextStyle(fontFamily: font, fontSize: d['sNo'] ?? 50, fontWeight: FontWeight.bold, color: Colors.white)),
-            const SizedBox(height: 10),
-            Text(name.isEmpty ? '-' : name, textAlign: TextAlign.center, style: TextStyle(fontFamily: font, fontSize: d['sNama'] ?? 65, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1, shadows: const [Shadow(color: Colors.black, blurRadius: 5)])),
-          ],
+        curve: Curves.easeOutQuint, // Animasi sangat smooth
+        offset: isVisible ? Offset.zero : const Offset(0, 0.3), // Meluncur naik dari bawah
+        child: Container(
+          margin: EdgeInsets.only(
+            left: 10, right: 10, 
+            bottom: isCenter ? 40 : 0 // Kotak juara 1 sedikit lebih tinggi posisinya
+          ),
+          padding: EdgeInsets.symmetric(vertical: d['sPad'] ?? 50, horizontal: 20),
+          width: d['sWidth'] ?? 400,
+          decoration: BoxDecoration(
+            color: col.withOpacity(opacity), // Terapkan Transparansi di sini
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white, width: isCenter ? 6 : 3),
+            boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 20, spreadRadius: 2)],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(title, style: TextStyle(fontFamily: font, fontSize: d['sTitleBox'] ?? 30, fontWeight: FontWeight.w900, color: Colors.black87, letterSpacing: 2)),
+              const SizedBox(height: 10),
+              Text(no.isEmpty ? '-' : no, style: TextStyle(fontFamily: font, fontSize: d['sNo'] ?? 50, fontWeight: FontWeight.bold, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 10),
+              Text(name.isEmpty ? '-' : name, textAlign: TextAlign.center, style: TextStyle(fontFamily: font, fontSize: d['sNama'] ?? 65, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1, shadows: const [Shadow(color: Colors.black, blurRadius: 5)]), maxLines: 2, overflow: TextOverflow.ellipsis),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // LOGIKA KOTAK TUNGGAL YANG BENAR-BENAR DI TENGAH
   Widget _buildBoxLayout() {
     bool showAll = action == 'all';
     if (showAll) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          _buildBox('JUARA 3', d['j3no'], d['j3nama'], Color(d['c3'] ?? Colors.deepOrange.value), false, true),
-          _buildBox('JUARA 1', d['j1no'], d['j1nama'], Color(d['c1'] ?? Colors.amber.value), true, true),
-          _buildBox('JUARA 2', d['j2no'], d['j2nama'], Color(d['c2'] ?? Colors.blueGrey.value), false, true),
-        ],
+      // MENCEGAH OVERFLOW (KOTAK HILANG) MENGGUNAKAN FITTEDBOX
+      return FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            _buildBox('JUARA 3', d['j3no'], d['j3nama'], Color(d['c3'] ?? Colors.deepOrange.value), false, true),
+            _buildBox('JUARA 1', d['j1no'], d['j1nama'], Color(d['c1'] ?? Colors.amber.value), true, true),
+            _buildBox('JUARA 2', d['j2no'], d['j2nama'], Color(d['c2'] ?? Colors.blueGrey.value), false, true),
+          ],
+        ),
       );
     } else {
       String t = ''; String no = ''; String na = ''; Color c = Colors.black;
       if (action == 'j1') { t = 'JUARA 1'; no = d['j1no'] ?? ''; na = d['j1nama'] ?? ''; c = Color(d['c1'] ?? Colors.amber.value); }
       if (action == 'j2') { t = 'JUARA 2'; no = d['j2no'] ?? ''; na = d['j2nama'] ?? ''; c = Color(d['c2'] ?? Colors.blueGrey.value); }
       if (action == 'j3') { t = 'JUARA 3'; no = d['j3no'] ?? ''; na = d['j3nama'] ?? ''; c = Color(d['c3'] ?? Colors.deepOrange.value); }
-      // Kembalikan 1 kotak saja, akan otomatis ke tengah layar oleh Column induk
       return _buildBox(t, no, na, c, true, true);
     }
   }
@@ -640,12 +647,11 @@ class LedCanvasWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // JUDUL CUSTOM (Bisa diedit teks, ukuran, dan ketinggiannya)
             AnimatedOpacity(
               duration: const Duration(milliseconds: 500), opacity: showTitle ? 1.0 : 0.0,
               child: Transform.translate(
                 offset: Offset(0, d['sMainTitleY'] ?? 0),
-                child: Text(d['mainTitle'] ?? 'PEMENANG LOMBA', style: TextStyle(fontFamily: font, fontSize: d['sMainTitle'] ?? 70, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 5, shadows: const [Shadow(color: Colors.black, blurRadius: 20)])),
+                child: Text(d['mainTitle'] ?? 'PEMENANG LOMBA', style: TextStyle(fontFamily: font, fontSize: d['sMainTitle'] ?? 80, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 5, shadows: const [Shadow(color: Colors.black, blurRadius: 20)])),
               ),
             ),
             
@@ -654,13 +660,12 @@ class LedCanvasWidget extends StatelessWidget {
               child: Container(
                 margin: const EdgeInsets.only(top: 10, bottom: 40), padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
                 decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(50), border: Border.all(color: Colors.white30)),
-                child: Text(d['kat'] ?? '', style: TextStyle(fontFamily: font, fontSize: d['sKat'] ?? 35, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 3)),
+                child: Text(d['kat'] ?? '', style: TextStyle(fontFamily: font, fontSize: d['sKat'] ?? 40, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 3)),
               ),
             ),
 
-            if (!showTitle && d['kat'] == null) const SizedBox(height: 100),
+            if (!showTitle && (d['kat'] == null || d['kat'].toString().isEmpty)) const SizedBox(height: 100),
 
-            // TAMPILKAN KOTAK
             _buildBoxLayout()
           ],
         ),
