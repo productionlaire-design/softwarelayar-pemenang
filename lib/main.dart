@@ -20,11 +20,12 @@ void main(List<String> args) async {
   }
 }
 
+// 20 FONT PILIHAN PROFESIONAL
 const List<String> fontChoices = [
   'Segoe UI', 'Impact', 'Arial Black', 'Arial', 'Tahoma', 'Verdana', 
   'Trebuchet MS', 'Georgia', 'Times New Roman', 'Comic Sans MS', 
   'Courier New', 'Consolas', 'Garamond', 'Palatino Linotype', 
-  'Calibri', 'Cambria', 'Candara', 'Corbel', 'Constantia'
+  'Calibri', 'Cambria', 'Candara', 'Corbel', 'Constantia', 'Franklin Gothic Medium'
 ];
 
 // ==========================================
@@ -40,6 +41,7 @@ class OperatorApp extends StatelessWidget {
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF0F172A),
         cardColor: const Color(0xFF1E293B),
+        dividerColor: Colors.white24,
       ),
       home: const OperatorScreen(),
     );
@@ -63,20 +65,27 @@ class _OperatorScreenState extends State<OperatorScreen> {
   Map<String, dynamic> liveData = {};
   String liveAction = 'clear';
 
-  // State Input
+  // --- DATA INPUT ---
   final _mainTitleCtrl = TextEditingController(text: 'PEMENANG LOMBA');
   final _katCtrl = TextEditingController();
   final _j1noCtrl = TextEditingController(); final _j1namaCtrl = TextEditingController();
   final _j2noCtrl = TextEditingController(); final _j2namaCtrl = TextEditingController();
   final _j3noCtrl = TextEditingController(); final _j3namaCtrl = TextEditingController();
 
-  // Settings
-  String selectedFont = 'Segoe UI';
-  double sScale = 100; double sPosY = 0;
+  // --- SETTINGS ---
+  String animStyle = 'bounce'; // bounce, slide, fade
+  // Fonts
+  String fTitle = 'Segoe UI'; String fKat = 'Segoe UI'; String fBox = 'Segoe UI';
+  // Judul
   double sMainTitle = 80; double sMainTitleY = 0;
-  double sKat = 40; double sTitleBox = 35; double sNo = 50; double sNama = 70;
-  double sWidth = 450; double sPad = 60; double boxOpacity = 0.9;
+  // Kategori
+  Color cKat = Colors.black87; double opKat = 0.8;
+  double sKat = 35; double sKatPad = 15; double sKatWidth = 250; double sKatY = 0;
+  // Kotak Juara
   Color c1 = Colors.amber; Color c2 = Colors.blueGrey; Color c3 = Colors.deepOrange;
+  double opBox = 0.95;
+  double sTitleBox = 35; double sNo = 50; double sNama = 65;
+  double sWidth = 450; double sPad = 50; double sScale = 100; double sPosY = 0;
 
   @override
   void initState() {
@@ -88,14 +97,15 @@ class _OperatorScreenState extends State<OperatorScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _mainTitleCtrl.text = prefs.getString('mainTitle') ?? 'PEMENANG LOMBA';
-      selectedFont = prefs.getString('font') ?? 'Segoe UI';
-      sScale = prefs.getDouble('sScale') ?? 100; sPosY = prefs.getDouble('sPosY') ?? 0;
+      animStyle = prefs.getString('animStyle') ?? 'bounce';
+      fTitle = prefs.getString('fTitle') ?? 'Impact'; fKat = prefs.getString('fKat') ?? 'Segoe UI'; fBox = prefs.getString('fBox') ?? 'Segoe UI';
       sMainTitle = prefs.getDouble('sMainTitle') ?? 80; sMainTitleY = prefs.getDouble('sMainTitleY') ?? 0;
-      sKat = prefs.getDouble('sKat') ?? 40; sTitleBox = prefs.getDouble('sTitleBox') ?? 35;
-      sNo = prefs.getDouble('sNo') ?? 50; sNama = prefs.getDouble('sNama') ?? 70;
-      sWidth = prefs.getDouble('sWidth') ?? 450; sPad = prefs.getDouble('sPad') ?? 60;
-      boxOpacity = prefs.getDouble('boxOpacity') ?? 0.9;
+      cKat = Color(prefs.getInt('cKat') ?? Colors.black87.value); opKat = prefs.getDouble('opKat') ?? 0.8;
+      sKat = prefs.getDouble('sKat') ?? 35; sKatPad = prefs.getDouble('sKatPad') ?? 15; sKatWidth = prefs.getDouble('sKatWidth') ?? 250; sKatY = prefs.getDouble('sKatY') ?? 0;
       c1 = Color(prefs.getInt('c1') ?? Colors.amber.value); c2 = Color(prefs.getInt('c2') ?? Colors.blueGrey.value); c3 = Color(prefs.getInt('c3') ?? Colors.deepOrange.value);
+      opBox = prefs.getDouble('opBox') ?? 0.95;
+      sTitleBox = prefs.getDouble('sTitleBox') ?? 35; sNo = prefs.getDouble('sNo') ?? 50; sNama = prefs.getDouble('sNama') ?? 65;
+      sWidth = prefs.getDouble('sWidth') ?? 450; sPad = prefs.getDouble('sPad') ?? 50; sScale = prefs.getDouble('sScale') ?? 100; sPosY = prefs.getDouble('sPosY') ?? 0;
       bgPath = prefs.getString('bgPath');
       if (bgPath != null) _initPreviewVideo(bgPath!);
     });
@@ -104,15 +114,14 @@ class _OperatorScreenState extends State<OperatorScreen> {
 
   Future<void> _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString('mainTitle', _mainTitleCtrl.text);
-    prefs.setString('font', selectedFont);
-    prefs.setDouble('sScale', sScale); prefs.setDouble('sPosY', sPosY);
+    prefs.setString('mainTitle', _mainTitleCtrl.text); prefs.setString('animStyle', animStyle);
+    prefs.setString('fTitle', fTitle); prefs.setString('fKat', fKat); prefs.setString('fBox', fBox);
     prefs.setDouble('sMainTitle', sMainTitle); prefs.setDouble('sMainTitleY', sMainTitleY);
-    prefs.setDouble('sKat', sKat); prefs.setDouble('sTitleBox', sTitleBox);
-    prefs.setDouble('sNo', sNo); prefs.setDouble('sNama', sNama);
-    prefs.setDouble('sWidth', sWidth); prefs.setDouble('sPad', sPad);
-    prefs.setDouble('boxOpacity', boxOpacity);
-    prefs.setInt('c1', c1.value); prefs.setInt('c2', c2.value); prefs.setInt('c3', c3.value);
+    prefs.setInt('cKat', cKat.value); prefs.setDouble('opKat', opKat);
+    prefs.setDouble('sKat', sKat); prefs.setDouble('sKatPad', sKatPad); prefs.setDouble('sKatWidth', sKatWidth); prefs.setDouble('sKatY', sKatY);
+    prefs.setInt('c1', c1.value); prefs.setInt('c2', c2.value); prefs.setInt('c3', c3.value); prefs.setDouble('opBox', opBox);
+    prefs.setDouble('sTitleBox', sTitleBox); prefs.setDouble('sNo', sNo); prefs.setDouble('sNama', sNama);
+    prefs.setDouble('sWidth', sWidth); prefs.setDouble('sPad', sPad); prefs.setDouble('sScale', sScale); prefs.setDouble('sPosY', sPosY);
     if(bgPath != null) prefs.setString('bgPath', bgPath!);
     _updateStandbyData();
     if(liveAction != 'clear') _sendToLed(liveAction); 
@@ -122,33 +131,30 @@ class _OperatorScreenState extends State<OperatorScreen> {
     if (path.toLowerCase().endsWith('.mp4') || path.toLowerCase().endsWith('.mov') || path.toLowerCase().endsWith('.avi')) {
       _previewVideoCtrl?.dispose();
       _previewVideoCtrl = VideoPlayerController.file(File(path));
-      await _previewVideoCtrl!.initialize();
-      _previewVideoCtrl!.setLooping(true);
-      _previewVideoCtrl!.play();
-      if(mounted) setState(() {});
+      try {
+        await _previewVideoCtrl!.initialize();
+        _previewVideoCtrl!.setLooping(true);
+        _previewVideoCtrl!.play();
+        if(mounted) setState(() {});
+      } catch (e) { print("Video Error: $e"); }
     } else {
-      _previewVideoCtrl?.dispose();
-      _previewVideoCtrl = null;
+      _previewVideoCtrl?.dispose(); _previewVideoCtrl = null;
       if(mounted) setState(() {});
     }
   }
 
   void _openLedWindow() async {
     final window = await DesktopMultiWindow.createWindow(jsonEncode({}));
-    window..setFrame(const Offset(0, 0) & const Size(1280, 720))..setTitle('Layar LED Utama')..show();
+    window..setFrame(const Offset(0, 0) & const Size(1280, 720))..setTitle('LAIRE CREATIVE STUDIO - LED')..show();
     setState(() { ledWindowId = window.windowId; });
     Future.delayed(const Duration(milliseconds: 500), () => _sendToLed('clear'));
   }
 
   void _pickBackground() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom, 
-      allowedExtensions: ['mp4', 'mov', 'avi', 'jpg', 'jpeg', 'png']
-    );
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['mp4', 'mov', 'avi', 'jpg', 'jpeg', 'png']);
     if (result != null) {
       setState(() { bgPath = result.files.single.path; });
-      _initPreviewVideo(bgPath!);
-      _saveSettings();
+      _initPreviewVideo(bgPath!); _saveSettings();
     }
   }
 
@@ -158,9 +164,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
       String content = await File(result.files.single.path!).readAsString();
       for (var line in content.split('\n')) {
         List<String> cols = line.split(',');
-        if (cols.length >= 7) {
-          queue.add({'kat': cols[0].trim(), 'j1no': cols[1].trim(), 'j1nama': cols[2].trim(), 'j2no': cols[3].trim(), 'j2nama': cols[4].trim(), 'j3no': cols[5].trim(), 'j3nama': cols[6].trim()});
-        }
+        if (cols.length >= 7) queue.add({'kat': cols[0].trim(), 'j1no': cols[1].trim(), 'j1nama': cols[2].trim(), 'j2no': cols[3].trim(), 'j2nama': cols[4].trim(), 'j3no': cols[5].trim(), 'j3nama': cols[6].trim()});
       }
       setState(() {});
     }
@@ -169,12 +173,14 @@ class _OperatorScreenState extends State<OperatorScreen> {
   void _updateStandbyData() {
     setState(() {
       standbyData = {
-        'mainTitle': _mainTitleCtrl.text, 'font': selectedFont,
-        'kat': _katCtrl.text, 'j1no': _j1noCtrl.text, 'j1nama': _j1namaCtrl.text,
-        'j2no': _j2noCtrl.text, 'j2nama': _j2namaCtrl.text, 'j3no': _j3noCtrl.text, 'j3nama': _j3namaCtrl.text,
-        'sScale': sScale, 'sPosY': sPosY, 'sMainTitle': sMainTitle, 'sMainTitleY': sMainTitleY,
-        'sKat': sKat, 'sTitleBox': sTitleBox, 'sNo': sNo, 'sNama': sNama, 'sWidth': sWidth, 'sPad': sPad,
-        'c1': c1.value, 'c2': c2.value, 'c3': c3.value, 'boxOpacity': boxOpacity, 'bgPath': bgPath
+        'mainTitle': _mainTitleCtrl.text, 'animStyle': animStyle,
+        'fTitle': fTitle, 'fKat': fKat, 'fBox': fBox,
+        'kat': _katCtrl.text, 'j1no': _j1noCtrl.text, 'j1nama': _j1namaCtrl.text, 'j2no': _j2noCtrl.text, 'j2nama': _j2namaCtrl.text, 'j3no': _j3noCtrl.text, 'j3nama': _j3namaCtrl.text,
+        'sMainTitle': sMainTitle, 'sMainTitleY': sMainTitleY,
+        'cKat': cKat.value, 'opKat': opKat, 'sKat': sKat, 'sKatPad': sKatPad, 'sKatWidth': sKatWidth, 'sKatY': sKatY,
+        'c1': c1.value, 'c2': c2.value, 'c3': c3.value, 'opBox': opBox,
+        'sTitleBox': sTitleBox, 'sNo': sNo, 'sNama': sNama, 'sWidth': sWidth, 'sPad': sPad, 'sScale': sScale, 'sPosY': sPosY,
+        'bgPath': bgPath
       };
     });
   }
@@ -195,30 +201,19 @@ class _OperatorScreenState extends State<OperatorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
-        elevation: 5,
+        backgroundColor: const Color(0xFF0F172A), elevation: 5,
         title: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.blueAccent.withOpacity(0.2), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.blueAccent)),
-              child: const Icon(Icons.stars, color: Colors.blueAccent, size: 24),
-            ),
+            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.blueAccent.withOpacity(0.2), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.blueAccent)), child: const Icon(Icons.stars, color: Colors.blueAccent, size: 24)),
             const SizedBox(width: 15),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('LAIRE CREATIVE STUDIO', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 2, color: Colors.white)),
-                Text('Professional Broadcast System', style: TextStyle(fontSize: 10, color: Colors.grey, letterSpacing: 1)),
-              ],
-            ),
+            const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('LAIRE CREATIVE STUDIO', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 2, color: Colors.white)),
+              Text('Professional Broadcast System', style: TextStyle(fontSize: 10, color: Colors.grey, letterSpacing: 1)),
+            ]),
           ],
         ),
         actions: [
-          ElevatedButton.icon(
-            icon: const Icon(Icons.monitor, color: Colors.white), label: const Text('FULLSCREEN LAYAR LED', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-            onPressed: _openLedWindow,
-          ),
+          ElevatedButton.icon(icon: const Icon(Icons.monitor, color: Colors.white), label: const Text('BUKA LAYAR LED', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)), style: ElevatedButton.styleFrom(backgroundColor: Colors.teal), onPressed: _openLedWindow),
           const SizedBox(width: 20),
         ],
       ),
@@ -228,8 +223,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
           Expanded(
             flex: 3,
             child: Container(
-              padding: const EdgeInsets.all(15), 
-              decoration: const BoxDecoration(border: Border(right: BorderSide(color: Colors.white12))), 
+              padding: const EdgeInsets.all(15), decoration: const BoxDecoration(border: Border(right: BorderSide(color: Colors.white12))), 
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -287,18 +281,15 @@ class _OperatorScreenState extends State<OperatorScreen> {
             ),
           ),
           
-          // ==================== KOLOM 2: LAYAR KONTROL & 1 PREVIEW SAJA ====================
+          // ==================== KOLOM 2: LAYAR KONTROL & PREVIEW ====================
           Expanded(
             flex: 4,
             child: Container(
-              padding: const EdgeInsets.all(15), 
-              decoration: const BoxDecoration(border: Border(right: BorderSide(color: Colors.white12))), 
+              padding: const EdgeInsets.all(15), decoration: const BoxDecoration(border: Border(right: BorderSide(color: Colors.white12))), 
               child: Column(
                 children: [
                   const Text('2. KONTROL TAYANG & LIVE PREVIEW', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
                   const SizedBox(height: 20),
-                  
-                  // TOMBOL BROADCAST
                   Row(
                     children: [
                       Expanded(child: ElevatedButton(onPressed: () => _sendToLed('j3'), style: ElevatedButton.styleFrom(backgroundColor: c3, padding: const EdgeInsets.symmetric(vertical: 15)), child: const Text('TAYANG J3', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)))),
@@ -316,12 +307,9 @@ class _OperatorScreenState extends State<OperatorScreen> {
                       Expanded(flex: 1, child: ElevatedButton(onPressed: () => _sendToLed('clear'), style: ElevatedButton.styleFrom(backgroundColor: Colors.red, padding: const EdgeInsets.symmetric(vertical: 15)), child: const Text('✖ CLEAR', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)))),
                     ],
                   ),
-
                   const SizedBox(height: 30),
                   const Align(alignment: Alignment.centerLeft, child: Text('LIVE OUTPUT (Sesuai Layar LED)', style: TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.bold))),
                   const SizedBox(height: 10),
-                  
-                  // PREVIEW YANG DIKUNCI 16:9
                   Expanded(
                     child: Center(
                       child: Container(
@@ -343,50 +331,75 @@ class _OperatorScreenState extends State<OperatorScreen> {
               padding: const EdgeInsets.all(15),
               child: ListView(
                 children: [
-                  const Text('3. KUSTOMISASI VISUAL', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
+                  const Text('3. KUSTOMISASI (AUTO-SAVE)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
                   const SizedBox(height: 15),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.wallpaper), label: const Text('Pilih Background (Video/Img)'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, minimumSize: const Size(double.infinity, 45)),
-                    onPressed: _pickBackground,
-                  ),
-                  Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(bgPath ?? 'Tidak ada background', style: const TextStyle(fontSize: 10, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis)),
                   
-                  const Divider(),
-                  const Text('Teks Judul & Font:', style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 5),
-                  TextField(controller: _mainTitleCtrl, decoration: const InputDecoration(labelText: 'Teks Judul Utama', isDense: true), onChanged: (_) => _saveSettings()),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    value: selectedFont,
-                    decoration: const InputDecoration(isDense: true, labelText: 'Pilih Font (Tampilan)'),
-                    items: fontChoices.map((f) => DropdownMenuItem(value: f, child: Text(f, style: TextStyle(fontFamily: f)))).toList(),
-                    onChanged: (v) { setState(() { selectedFont = v!; }); _saveSettings(); }
+                  // ANIMASI & BACKGROUND
+                  ExpansionTile(
+                    title: const Text('Umum & Background', style: TextStyle(fontWeight: FontWeight.bold)),
+                    initiallyExpanded: true,
+                    children: [
+                      ElevatedButton.icon(icon: const Icon(Icons.wallpaper), label: const Text('Pilih Background'), style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, minimumSize: const Size(double.infinity, 40)), onPressed: _pickBackground),
+                      Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Text(bgPath ?? 'Tidak ada background', style: const TextStyle(fontSize: 10, color: Colors.grey), maxLines: 1)),
+                      DropdownButtonFormField<String>(
+                        value: animStyle, decoration: const InputDecoration(isDense: true, labelText: 'Gaya Animasi Masuk'),
+                        items: const [DropdownMenuItem(value: 'bounce', child: Text('Zoom Membal (Bounce)')), DropdownMenuItem(value: 'slide', child: Text('Slide Terbang (Halus)')), DropdownMenuItem(value: 'fade', child: Text('Fade In (Sederhana)'))],
+                        onChanged: (v) { setState(() { animStyle = v!; }); _saveSettings(); }
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                  
+                  // JUDUL UTAMA
+                  ExpansionTile(
+                    title: const Text('Desain Judul Utama', style: TextStyle(fontWeight: FontWeight.bold)),
+                    children: [
+                      TextField(controller: _mainTitleCtrl, decoration: const InputDecoration(labelText: 'Teks Judul Utama', isDense: true), onChanged: (_) => _saveSettings()),
+                      const SizedBox(height: 10),
+                      DropdownButtonFormField<String>(value: fTitle, decoration: const InputDecoration(isDense: true, labelText: 'Font Judul'), items: fontChoices.map((f) => DropdownMenuItem(value: f, child: Text(f, style: TextStyle(fontFamily: f)))).toList(), onChanged: (v) { setState(() { fTitle = v!; }); _saveSettings(); }),
+                      _buildSlider('Ukuran Judul', sMainTitle, 30, 150, (v) => setState(() => sMainTitle = v)),
+                      _buildSlider('Posisi Atas/Bawah', sMainTitleY, -300, 300, (v) => setState(() => sMainTitleY = v)),
+                      const SizedBox(height: 10),
+                    ],
                   ),
 
-                  const SizedBox(height: 15),
-                  const Text('Palet Warna Kotak (Klik untuk Ubah):', style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 5),
-                  _buildColorPicker('Warna J3', c3, (c) => setState(() { c3 = c; _saveSettings(); })),
-                  _buildColorPicker('Warna J1', c1, (c) => setState(() { c1 = c; _saveSettings(); })),
-                  _buildColorPicker('Warna J2', c2, (c) => setState(() { c2 = c; _saveSettings(); })),
-                  
-                  const Divider(),
-                  const Text('Dimensi & Posisi Kotak:', style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.bold)),
-                  _buildSlider('Transparansi Kotak (%)', boxOpacity * 100, 10, 100, (v) => setState(() => boxOpacity = v / 100)),
-                  _buildSlider('Skala (Besar/Kecil)', sScale, 50, 150, (v) => setState(() => sScale = v)),
-                  _buildSlider('Posisi Y Seluruhnya', sPosY, -500, 500, (v) => setState(() => sPosY = v)),
-                  _buildSlider('Lebar Kotak', sWidth, 200, 800, (v) => setState(() => sWidth = v)),
-                  _buildSlider('Tinggi Kotak (Padding)', sPad, 10, 100, (v) => setState(() => sPad = v)),
-                  
-                  const Divider(),
-                  const Text('Ukuran & Posisi Teks:', style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.bold)),
-                  _buildSlider('Ukuran Judul Utama', sMainTitle, 30, 150, (v) => setState(() => sMainTitle = v)),
-                  _buildSlider('Geser Tinggi Judul', sMainTitleY, -300, 300, (v) => setState(() => sMainTitleY = v)),
-                  _buildSlider('Teks Kategori', sKat, 15, 80, (v) => setState(() => sKat = v)),
-                  _buildSlider('Teks "JUARA"', sTitleBox, 15, 80, (v) => setState(() => sTitleBox = v)),
-                  _buildSlider('Teks NOMOR', sNo, 20, 150, (v) => setState(() => sNo = v)),
-                  _buildSlider('Teks NAMA', sNama, 30, 150, (v) => setState(() => sNama = v)),
+                  // KATEGORI
+                  ExpansionTile(
+                    title: const Text('Desain Kategori', style: TextStyle(fontWeight: FontWeight.bold)),
+                    children: [
+                      DropdownButtonFormField<String>(value: fKat, decoration: const InputDecoration(isDense: true, labelText: 'Font Kategori'), items: fontChoices.map((f) => DropdownMenuItem(value: f, child: Text(f, style: TextStyle(fontFamily: f)))).toList(), onChanged: (v) { setState(() { fKat = v!; }); _saveSettings(); }),
+                      const SizedBox(height: 10),
+                      _buildColorPicker('Warna Pita', cKat, (c) => setState(() { cKat = c; _saveSettings(); })),
+                      _buildSlider('Transparansi Pita (%)', opKat * 100, 10, 100, (v) => setState(() => opKat = v / 100)),
+                      _buildSlider('Ukuran Teks', sKat, 15, 80, (v) => setState(() => sKat = v)),
+                      _buildSlider('Lebar Pita', sKatWidth, 100, 800, (v) => setState(() => sKatWidth = v)),
+                      _buildSlider('Tinggi Pita (Padding)', sKatPad, 5, 50, (v) => setState(() => sKatPad = v)),
+                      _buildSlider('Posisi Atas/Bawah', sKatY, -100, 300, (v) => setState(() => sKatY = v)),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+
+                  // KOTAK JUARA
+                  ExpansionTile(
+                    title: const Text('Desain Kotak Pemenang', style: TextStyle(fontWeight: FontWeight.bold)),
+                    children: [
+                      DropdownButtonFormField<String>(value: fBox, decoration: const InputDecoration(isDense: true, labelText: 'Font Dalam Kotak'), items: fontChoices.map((f) => DropdownMenuItem(value: f, child: Text(f, style: TextStyle(fontFamily: f)))).toList(), onChanged: (v) { setState(() { fBox = v!; }); _saveSettings(); }),
+                      const SizedBox(height: 10),
+                      _buildColorPicker('Warna J3', c3, (c) => setState(() { c3 = c; _saveSettings(); })),
+                      _buildColorPicker('Warna J1', c1, (c) => setState(() { c1 = c; _saveSettings(); })),
+                      _buildColorPicker('Warna J2', c2, (c) => setState(() { c2 = c; _saveSettings(); })),
+                      _buildSlider('Transparansi Kotak (%)', opBox * 100, 10, 100, (v) => setState(() => opBox = v / 100)),
+                      const Divider(),
+                      _buildSlider('Skala Kotak Keseluruhan', sScale, 50, 150, (v) => setState(() => sScale = v)),
+                      _buildSlider('Posisi Kotak (Y)', sPosY, -500, 500, (v) => setState(() => sPosY = v)),
+                      _buildSlider('Lebar Kotak', sWidth, 200, 800, (v) => setState(() => sWidth = v)),
+                      _buildSlider('Tinggi Kotak (Padding)', sPad, 10, 100, (v) => setState(() => sPad = v)),
+                      const Divider(),
+                      _buildSlider('Teks "JUARA"', sTitleBox, 15, 80, (v) => setState(() => sTitleBox = v)),
+                      _buildSlider('Teks NOMOR', sNo, 20, 150, (v) => setState(() => sNo = v)),
+                      _buildSlider('Teks NAMA', sNama, 30, 150, (v) => setState(() => sNama = v)),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -399,22 +412,11 @@ class _OperatorScreenState extends State<OperatorScreen> {
   Widget _buildColorPicker(String label, Color current, ValueChanged<Color> onSelect) {
     List<Color> palette = [Colors.amber, Colors.orange, Colors.deepOrange, Colors.red, Colors.pink, Colors.purple, Colors.blue, Colors.teal, Colors.green, Colors.blueGrey, Colors.grey.shade800, Colors.black87];
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          SizedBox(width: 60, child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))),
-          Expanded(
-            child: Wrap(
-              spacing: 4, runSpacing: 4,
-              children: palette.map((c) => InkWell(
-                onTap: () => onSelect(c),
-                child: Container(
-                  width: 20, height: 20,
-                  decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: current == c ? Colors.white : Colors.transparent, width: 2)),
-                ),
-              )).toList(),
-            ),
-          )
+          SizedBox(width: 70, child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))),
+          Expanded(child: Wrap(spacing: 4, runSpacing: 4, children: palette.map((c) => InkWell(onTap: () => onSelect(c), child: Container(width: 20, height: 20, decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: current == c ? Colors.white : Colors.transparent, width: 2))))).toList()))
         ],
       ),
     );
@@ -430,14 +432,13 @@ class _OperatorScreenState extends State<OperatorScreen> {
     );
   }
 
-  // LOGIKA PREVIEW TERKUNCI 16:9 DENGAN FITTEDBOX
   Widget _buildPreviewScreen(Map<String, dynamic> data, String action) {
     return AspectRatio(
       aspectRatio: 16 / 9,
       child: Container(
         color: Colors.black,
         child: FittedBox(
-          fit: BoxFit.contain, // Memaksa isi canvas 1920x1080 masuk sempurna ke kotak preview
+          fit: BoxFit.contain, 
           child: SizedBox(
             width: 1920, height: 1080,
             child: Stack(
@@ -516,10 +517,12 @@ class _LedScreenState extends State<LedScreen> {
           isVideo = true;
           _videoCtrl?.dispose();
           _videoCtrl = VideoPlayerController.file(File(activeBg!));
-          await _videoCtrl!.initialize();
-          await _videoCtrl!.setLooping(true);
-          await _videoCtrl!.play();
-          if (mounted) setState(() {});
+          try {
+            await _videoCtrl!.initialize();
+            await _videoCtrl!.setLooping(true);
+            await _videoCtrl!.play();
+            if (mounted) setState(() {});
+          } catch (e) { print("Error LED Video: $e"); }
         } else {
           isVideo = false;
           _videoCtrl?.dispose();
@@ -563,7 +566,7 @@ class _LedScreenState extends State<LedScreen> {
 }
 
 // ==========================================
-// KANVAS PEMENANG (Dengan Smooth Animation & Anti-Overflow)
+// KANVAS PEMENANG DENGAN ANIMASI PROFESIONAL
 // ==========================================
 class LedCanvasWidget extends StatelessWidget {
   final Map<String, dynamic> d;
@@ -571,74 +574,97 @@ class LedCanvasWidget extends StatelessWidget {
   
   const LedCanvasWidget({Key? key, required this.d, required this.action}) : super(key: key);
 
-  Widget _buildBox(String title, String no, String name, Color col, bool isCenter, bool isVisible) {
-    String font = d['font'] ?? 'Segoe UI';
-    double opacity = d['boxOpacity'] ?? 0.9; // Ambil nilai slider transparansi
+  Color _parseColor(dynamic val, Color fallback) {
+    if (val == null) return fallback;
+    if (val is int) return Color(val);
+    return fallback;
+  }
 
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 500),
-      opacity: isVisible ? 1.0 : 0.0,
-      child: AnimatedSlide(
-        duration: const Duration(milliseconds: 700),
-        curve: Curves.easeOutQuint, // Animasi sangat smooth
-        offset: isVisible ? Offset.zero : const Offset(0, 0.3), // Meluncur naik dari bawah
-        child: Container(
-          margin: EdgeInsets.only(
-            left: 10, right: 10, 
-            bottom: isCenter ? 40 : 0 // Kotak juara 1 sedikit lebih tinggi posisinya
-          ),
-          padding: EdgeInsets.symmetric(vertical: d['sPad'] ?? 50, horizontal: 20),
-          width: d['sWidth'] ?? 400,
-          decoration: BoxDecoration(
-            color: col.withOpacity(opacity), // Terapkan Transparansi di sini
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white, width: isCenter ? 6 : 3),
-            boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 20, spreadRadius: 2)],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(title, style: TextStyle(fontFamily: font, fontSize: d['sTitleBox'] ?? 30, fontWeight: FontWeight.w900, color: Colors.black87, letterSpacing: 2)),
-              const SizedBox(height: 10),
-              Text(no.isEmpty ? '-' : no, style: TextStyle(fontFamily: font, fontSize: d['sNo'] ?? 50, fontWeight: FontWeight.bold, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
-              const SizedBox(height: 10),
-              Text(name.isEmpty ? '-' : name, textAlign: TextAlign.center, style: TextStyle(fontFamily: font, fontSize: d['sNama'] ?? 65, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1, shadows: const [Shadow(color: Colors.black, blurRadius: 5)]), maxLines: 2, overflow: TextOverflow.ellipsis),
-            ],
-          ),
-        ),
+  Widget _buildBox(String title, String no, String name, Color col, bool isCenter, bool isVisible) {
+    String fontBox = d['fBox'] ?? 'Segoe UI';
+    double opBox = d['opBox'] ?? 0.95;
+    String anim = d['animStyle'] ?? 'bounce';
+
+    // Placeholder jika kosong (Anti Kotak Hitam)
+    String safeNo = (no.isEmpty) ? '-' : no;
+    String safeName = (name.isEmpty) ? '...' : name;
+
+    Widget boxContent = Container(
+      margin: EdgeInsets.only(left: 10, right: 10, bottom: isCenter ? 40 : 0),
+      padding: EdgeInsets.symmetric(vertical: d['sPad'] ?? 50, horizontal: 20),
+      width: d['sWidth'] ?? 400,
+      decoration: BoxDecoration(
+        color: col.withOpacity(opBox),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white, width: isCenter ? 6 : 3),
+        boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 20, spreadRadius: 2)],
       ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(title, style: TextStyle(fontFamily: fontBox, fontSize: d['sTitleBox'] ?? 35, fontWeight: FontWeight.w900, color: Colors.black87, letterSpacing: 2)),
+          const SizedBox(height: 10),
+          Text(safeNo, style: TextStyle(fontFamily: fontBox, fontSize: d['sNo'] ?? 50, fontWeight: FontWeight.bold, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 10),
+          Text(safeName, textAlign: TextAlign.center, style: TextStyle(fontFamily: fontBox, fontSize: d['sNama'] ?? 65, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1, shadows: const [Shadow(color: Colors.black, blurRadius: 5)]), maxLines: 2, overflow: TextOverflow.ellipsis),
+        ],
+      ),
+    );
+
+    return TweenAnimationBuilder<double>(
+      key: ValueKey('${action}_$title'), // Paksa reset animasi tiap diklik
+      tween: Tween(begin: 0.0, end: isVisible ? 1.0 : 0.0),
+      duration: const Duration(milliseconds: 800),
+      curve: anim == 'bounce' ? Curves.elasticOut : (anim == 'slide' ? Curves.easeOutCubic : Curves.easeIn),
+      builder: (context, val, child) {
+        if (anim == 'bounce') {
+          return Transform.scale(scale: val, child: Opacity(opacity: val.clamp(0.0, 1.0), child: child));
+        } else if (anim == 'slide') {
+          return Transform.translate(offset: Offset(0, 150 * (1 - val)), child: Opacity(opacity: val, child: child));
+        } else {
+          // Fade
+          return Opacity(opacity: val, child: child);
+        }
+      },
+      child: boxContent,
     );
   }
 
   Widget _buildBoxLayout() {
     bool showAll = action == 'all';
+    
+    // Parsing Warna Super Aman
+    Color c1 = _parseColor(d['c1'], Colors.amber);
+    Color c2 = _parseColor(d['c2'], Colors.blueGrey);
+    Color c3 = _parseColor(d['c3'], Colors.deepOrange);
+
     if (showAll) {
-      // MENCEGAH OVERFLOW (KOTAK HILANG) MENGGUNAKAN FITTEDBOX
       return FittedBox(
         fit: BoxFit.scaleDown,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            _buildBox('JUARA 3', d['j3no'], d['j3nama'], Color(d['c3'] ?? Colors.deepOrange.value), false, true),
-            _buildBox('JUARA 1', d['j1no'], d['j1nama'], Color(d['c1'] ?? Colors.amber.value), true, true),
-            _buildBox('JUARA 2', d['j2no'], d['j2nama'], Color(d['c2'] ?? Colors.blueGrey.value), false, true),
+            _buildBox('JUARA 3', d['j3no'] ?? '', d['j3nama'] ?? '', c3, false, true),
+            _buildBox('JUARA 1', d['j1no'] ?? '', d['j1nama'] ?? '', c1, true, true),
+            _buildBox('JUARA 2', d['j2no'] ?? '', d['j2nama'] ?? '', c2, false, true),
           ],
         ),
       );
     } else {
       String t = ''; String no = ''; String na = ''; Color c = Colors.black;
-      if (action == 'j1') { t = 'JUARA 1'; no = d['j1no'] ?? ''; na = d['j1nama'] ?? ''; c = Color(d['c1'] ?? Colors.amber.value); }
-      if (action == 'j2') { t = 'JUARA 2'; no = d['j2no'] ?? ''; na = d['j2nama'] ?? ''; c = Color(d['c2'] ?? Colors.blueGrey.value); }
-      if (action == 'j3') { t = 'JUARA 3'; no = d['j3no'] ?? ''; na = d['j3nama'] ?? ''; c = Color(d['c3'] ?? Colors.deepOrange.value); }
-      return _buildBox(t, no, na, c, true, true);
+      if (action == 'j1') { t = 'JUARA 1'; no = d['j1no'] ?? ''; na = d['j1nama'] ?? ''; c = c1; }
+      if (action == 'j2') { t = 'JUARA 2'; no = d['j2no'] ?? ''; na = d['j2nama'] ?? ''; c = c2; }
+      if (action == 'j3') { t = 'JUARA 3'; no = d['j3no'] ?? ''; na = d['j3nama'] ?? ''; c = c3; }
+      return FittedBox(fit: BoxFit.scaleDown, child: _buildBox(t, no, na, c, true, true));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     bool showTitle = action != 'clear';
-    String font = d['font'] ?? 'Segoe UI';
+    String fTitle = d['fTitle'] ?? 'Impact';
+    String fKat = d['fKat'] ?? 'Segoe UI';
     
     return Transform.scale(
       scale: (d['sScale'] ?? 100) / 100.0,
@@ -651,16 +677,24 @@ class LedCanvasWidget extends StatelessWidget {
               duration: const Duration(milliseconds: 500), opacity: showTitle ? 1.0 : 0.0,
               child: Transform.translate(
                 offset: Offset(0, d['sMainTitleY'] ?? 0),
-                child: Text(d['mainTitle'] ?? 'PEMENANG LOMBA', style: TextStyle(fontFamily: font, fontSize: d['sMainTitle'] ?? 80, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 5, shadows: const [Shadow(color: Colors.black, blurRadius: 20)])),
+                child: Text(d['mainTitle'] ?? 'PEMENANG LOMBA', textAlign: TextAlign.center, style: TextStyle(fontFamily: fTitle, fontSize: d['sMainTitle'] ?? 80, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 5, shadows: const [Shadow(color: Colors.black, blurRadius: 20)])),
               ),
             ),
             
             AnimatedOpacity(
               duration: const Duration(milliseconds: 500), opacity: (showTitle && d['kat'] != null && d['kat'].toString().isNotEmpty) ? 1.0 : 0.0,
-              child: Container(
-                margin: const EdgeInsets.only(top: 10, bottom: 40), padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-                decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(50), border: Border.all(color: Colors.white30)),
-                child: Text(d['kat'] ?? '', style: TextStyle(fontFamily: font, fontSize: d['sKat'] ?? 40, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 3)),
+              child: Transform.translate(
+                offset: Offset(0, d['sKatY'] ?? 0),
+                child: Container(
+                  margin: const EdgeInsets.only(top: 10, bottom: 40), 
+                  width: d['sKatWidth'] ?? 250,
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: d['sKatPad'] ?? 15),
+                  decoration: BoxDecoration(
+                    color: _parseColor(d['cKat'], Colors.black87).withOpacity(d['opKat'] ?? 0.8), 
+                    borderRadius: BorderRadius.circular(50), border: Border.all(color: Colors.white30)
+                  ),
+                  child: Text(d['kat'] ?? '', textAlign: TextAlign.center, style: TextStyle(fontFamily: fKat, fontSize: d['sKat'] ?? 35, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 3)),
+                ),
               ),
             ),
 
