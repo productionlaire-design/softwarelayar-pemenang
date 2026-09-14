@@ -20,13 +20,7 @@ jobs:
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
-      - name: Create Windows Folder
-        run: |
-          if (Test-Path "windows") { Remove-Item -Recurse -Force "windows" }
-          flutter create --project-name pengumuman_pro --platforms=windows .
-        shell: powershell
-
-      # INI KUNCI FINAL: Membuat pubspec.yaml dengan VERSI LIBRARY YANG DIKUNCI
+      # 1. SIAPKAN PUBSPEC DAN LIBRARY TERLEBIH DAHULU!
       - name: Force Strict Pubspec Configuration
         run: |
           $pubspec = @"
@@ -39,11 +33,11 @@ jobs:
           dependencies:
             flutter:
               sdk: flutter
-            desktop_multi_window: 0.2.0
-            file_picker: 8.0.0
-            video_player: 2.8.3
-            window_manager: 0.3.8
-            shared_preferences: 2.2.2
+            desktop_multi_window: ^0.2.0
+            file_picker: ^8.0.0
+            video_player: ^2.8.3
+            window_manager: ^0.3.8
+            shared_preferences: ^2.2.2
           flutter:
             uses-material-design: true
           "@
@@ -53,6 +47,14 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      # 2. BARU BUAT FOLDER WINDOWS (Kini jembatan C++ akan otomatis tercipta karena library sudah ada)
+      - name: Create Windows Folder (WITH PLUGINS)
+        run: |
+          if (Test-Path "windows") { Remove-Item -Recurse -Force "windows" }
+          flutter create --project-name pengumuman_pro --platforms=windows .
+        shell: powershell
+
+      # 3. SUNTIKKAN KODE MULTI-WINDOW KE MESIN C++
       - name: Inject Multi-Window C++ Code
         run: |
           $code = @"
