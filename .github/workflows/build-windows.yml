@@ -20,24 +20,38 @@ jobs:
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
-      - name: Clean and Recreate Windows Folder
+      - name: Create Windows Folder
         run: |
           if (Test-Path "windows") { Remove-Item -Recurse -Force "windows" }
-          if (Test-Path "build") { Remove-Item -Recurse -Force "build" }
-          flutter clean
           flutter create --project-name pengumuman_pro --platforms=windows .
         shell: powershell
 
-      # --- INI PERBAIKANNYA: Paksa robot mendownload ulang library yang terhapus ---
-      - name: Install Required Packages
+      # INI KUNCI FINAL: Membuat pubspec.yaml dengan VERSI LIBRARY YANG DIKUNCI
+      - name: Force Strict Pubspec Configuration
         run: |
-          flutter pub add desktop_multi_window
-          flutter pub add file_picker
-          flutter pub add video_player
-          flutter pub add window_manager
-          flutter pub add shared_preferences
-          flutter pub get
+          $pubspec = @"
+          name: pengumuman_pro
+          description: Professional Broadcast System
+          publish_to: 'none'
+          version: 1.0.0+1
+          environment:
+            sdk: '>=3.0.0 <4.0.0'
+          dependencies:
+            flutter:
+              sdk: flutter
+            desktop_multi_window: 0.2.0
+            file_picker: 8.0.0
+            video_player: 2.8.3
+            window_manager: 0.3.8
+            shared_preferences: 2.2.2
+          flutter:
+            uses-material-design: true
+          "@
+          Set-Content -Path pubspec.yaml -Value $pubspec
         shell: powershell
+
+      - name: Install Dependencies
+        run: flutter pub get
 
       - name: Inject Multi-Window C++ Code
         run: |
