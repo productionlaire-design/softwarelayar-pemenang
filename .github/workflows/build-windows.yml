@@ -36,7 +36,9 @@ jobs:
               sdk: flutter
             desktop_multi_window: ^0.2.0
             file_picker: ^8.0.0
-            video_player: ^2.8.3
+            media_kit: ^1.1.11
+            media_kit_video: ^1.2.5
+            media_kit_libs_video: ^1.3.1
             window_manager: ^0.3.8
             shared_preferences: ^2.2.2
           flutter:
@@ -48,18 +50,13 @@ jobs:
           flutter pub get
         shell: powershell
 
-      - name: Inject Multi-Window C++ (VERSI TERBARU & BENAR)
+      - name: Inject Multi-Window C++
         run: |
           $file = "windows\runner\flutter_window.cpp"
           $content = Get-Content -Path $file -Raw
-          
-          # 1. Masukkan header plugin terbaru
           $content = $content -replace '#include "flutter/generated_plugin_registrant.h"', "#include `"flutter/generated_plugin_registrant.h`"`n#include <desktop_multi_window/desktop_multi_window_plugin.h>"
-          
-          # 2. Masukkan kode callback (Pemecah Layar) di tempat yang benar
           $callback = "RegisterPlugins(flutter_controller_->engine());`n  DesktopMultiWindowSetWindowCreatedCallback([](void *controller) {`n    auto *flutter_view_controller = reinterpret_cast<flutter::FlutterViewController*>(controller);`n    RegisterPlugins(flutter_view_controller->engine());`n  });"
           $content = $content -replace 'RegisterPlugins\(flutter_controller_->engine\(\)\);', $callback
-          
           Set-Content -Path $file -Value $content
         shell: powershell
 
