@@ -20,7 +20,6 @@ jobs:
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
-      # 1. SIAPKAN PUBSPEC DAN LIBRARY TERLEBIH DAHULU!
       - name: Force Strict Pubspec Configuration
         run: |
           $pubspec = @"
@@ -44,17 +43,18 @@ jobs:
           Set-Content -Path pubspec.yaml -Value $pubspec
         shell: powershell
 
-      - name: Install Dependencies
-        run: flutter pub get
-
-      # 2. BARU BUAT FOLDER WINDOWS (Kini jembatan C++ akan otomatis tercipta karena library sudah ada)
-      - name: Create Windows Folder (WITH PLUGINS)
+      # 1. BUAT FOLDER WINDOWS DULU
+      - name: Clean and Create Windows Folder
         run: |
           if (Test-Path "windows") { Remove-Item -Recurse -Force "windows" }
           flutter create --project-name pengumuman_pro --platforms=windows .
         shell: powershell
 
-      # 3. SUNTIKKAN KODE MULTI-WINDOW KE MESIN C++
+      # 2. BARU DOWNLOAD LIBRARY (Otomatis akan menciptakan file generated_plugin_registrant.h)
+      - name: Generate Plugin Registrant
+        run: flutter pub get
+
+      # 3. SUNTIKKAN KODE C++ KITA
       - name: Inject Multi-Window C++ Code
         run: |
           $code = @"
