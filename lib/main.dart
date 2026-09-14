@@ -64,7 +64,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
   Map<String, dynamic> standbyData = {};
   Map<String, dynamic> liveData = {};
   String liveAction = 'clear';
-  bool showHadiah = true; // Fitur Hide/Show Hadiah
+  bool showHadiah = true;
 
   // --- DATA INPUT ---
   final _mainTitleCtrl = TextEditingController(text: 'PEMENANG LOMBA');
@@ -75,6 +75,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
 
   // --- SETTINGS ---
   String animStyle = 'bounce';
+  String boxStyle = 'rounded_border'; // GAYA BENTUK KOTAK
   String fTitle = 'Impact'; String fKat = 'Segoe UI'; String fBox = 'Segoe UI';
   double sMainTitle = 80; double sMainTitleY = 0;
   Color cKat = Colors.black87; double opKat = 0.8;
@@ -95,6 +96,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
     setState(() {
       _mainTitleCtrl.text = prefs.getString('mainTitle') ?? 'PEMENANG LOMBA';
       animStyle = prefs.getString('animStyle') ?? 'bounce';
+      boxStyle = prefs.getString('boxStyle') ?? 'rounded_border';
       showHadiah = prefs.getBool('showHadiah') ?? true;
       fTitle = prefs.getString('fTitle') ?? 'Impact'; fKat = prefs.getString('fKat') ?? 'Segoe UI'; fBox = prefs.getString('fBox') ?? 'Segoe UI';
       sMainTitle = prefs.getDouble('sMainTitle') ?? 80; sMainTitleY = prefs.getDouble('sMainTitleY') ?? 0;
@@ -112,7 +114,8 @@ class _OperatorScreenState extends State<OperatorScreen> {
 
   Future<void> _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString('mainTitle', _mainTitleCtrl.text); prefs.setString('animStyle', animStyle); prefs.setBool('showHadiah', showHadiah);
+    prefs.setString('mainTitle', _mainTitleCtrl.text); prefs.setString('animStyle', animStyle); 
+    prefs.setString('boxStyle', boxStyle); prefs.setBool('showHadiah', showHadiah);
     prefs.setString('fTitle', fTitle); prefs.setString('fKat', fKat); prefs.setString('fBox', fBox);
     prefs.setDouble('sMainTitle', sMainTitle); prefs.setDouble('sMainTitleY', sMainTitleY);
     prefs.setInt('cKat', cKat.value); prefs.setDouble('opKat', opKat);
@@ -163,10 +166,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
 
   void _downloadTemplateExcel() async {
     String? outputFile = await FilePicker.platform.saveFile(
-      dialogTitle: 'Simpan Template Excel/CSV',
-      fileName: 'Template_Pemenang_Laire.csv',
-      type: FileType.custom,
-      allowedExtensions: ['csv'],
+      dialogTitle: 'Simpan Template Excel/CSV', fileName: 'Template_Pemenang_Laire.csv', type: FileType.custom, allowedExtensions: ['csv'],
     );
     if (outputFile != null) {
       File f = File(outputFile);
@@ -198,7 +198,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
   void _updateStandbyData() {
     setState(() {
       standbyData = {
-        'mainTitle': _mainTitleCtrl.text, 'animStyle': animStyle, 'showHadiah': showHadiah,
+        'mainTitle': _mainTitleCtrl.text, 'animStyle': animStyle, 'boxStyle': boxStyle, 'showHadiah': showHadiah,
         'fTitle': fTitle, 'fKat': fKat, 'fBox': fBox,
         'kat': _katCtrl.text, 
         'j1no': _j1noCtrl.text, 'j1nama': _j1namaCtrl.text, 'j1hadiah': _j1hadiahCtrl.text,
@@ -259,7 +259,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      Expanded(child: ElevatedButton.icon(icon: const Icon(Icons.file_upload, size: 18), label: const Text('Import Excel/CSV', style: TextStyle(fontSize: 12)), style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo), onPressed: _importCSV)),
+                      Expanded(child: ElevatedButton.icon(icon: const Icon(Icons.file_upload, size: 18), label: const Text('Import CSV', style: TextStyle(fontSize: 12)), style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo), onPressed: _importCSV)),
                       const SizedBox(width: 5),
                       Expanded(child: ElevatedButton.icon(icon: const Icon(Icons.download, size: 18), label: const Text('Download Template', style: TextStyle(fontSize: 12)), style: ElevatedButton.styleFrom(backgroundColor: Colors.green), onPressed: _downloadTemplateExcel)),
                     ],
@@ -390,24 +390,36 @@ class _OperatorScreenState extends State<OperatorScreen> {
                 children: [
                   const TabBar(
                     indicatorColor: Colors.amber, labelColor: Colors.amber, unselectedLabelColor: Colors.white54,
-                    tabs: [Tab(icon: Icon(Icons.settings), text: 'Umum'), Tab(icon: Icon(Icons.text_fields), text: 'Teks'), Tab(icon: Icon(Icons.format_shapes), text: 'Dimensi')]
+                    tabs: [Tab(icon: Icon(Icons.settings), text: 'Desain'), Tab(icon: Icon(Icons.text_fields), text: 'Font'), Tab(icon: Icon(Icons.format_shapes), text: 'Dimensi')]
                   ),
                   Expanded(
                     child: TabBarView(
                       children: [
-                        // TAB 1: UMUM & BACKGROUND
+                        // TAB 1: DESAIN & BACKGROUND
                         ListView(
                           padding: const EdgeInsets.all(15),
                           children: [
                             const Text('Background & Animasi', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white70)),
                             const SizedBox(height: 10),
                             ElevatedButton.icon(icon: const Icon(Icons.wallpaper), label: const Text('Pilih Background (Video/Img)'), style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, minimumSize: const Size(double.infinity, 45)), onPressed: _pickBackground),
-                            Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Text(isVideoError ? 'Format Video Ditolak (Gunakan .MP4)' : (bgPath ?? 'Tidak ada background'), style: TextStyle(fontSize: 10, color: isVideoError ? Colors.red : Colors.grey), maxLines: 1)),
+                            Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Text(isVideoError ? 'Format Video Ditolak (Pastikan file berformat .MP4 H264)' : (bgPath ?? 'Tidak ada background'), style: TextStyle(fontSize: 10, color: isVideoError ? Colors.red : Colors.grey), maxLines: 2)),
                             const SizedBox(height: 10),
                             DropdownButtonFormField<String>(
                               value: animStyle, decoration: const InputDecoration(isDense: true, labelText: 'Gaya Animasi Masuk', border: OutlineInputBorder()),
                               items: const [DropdownMenuItem(value: 'bounce', child: Text('Zoom Membal (Bounce)')), DropdownMenuItem(value: 'slide', child: Text('Slide Terbang (Halus)')), DropdownMenuItem(value: 'fade', child: Text('Fade In (Sederhana)'))],
                               onChanged: (v) { setState(() { animStyle = v!; }); _saveSettings(); }
+                            ),
+                            const SizedBox(height: 15),
+                            DropdownButtonFormField<String>(
+                              value: boxStyle, decoration: const InputDecoration(isDense: true, labelText: 'Bentuk Kotak Pemenang', border: OutlineInputBorder()),
+                              items: const [
+                                DropdownMenuItem(value: 'rounded_border', child: Text('Melengkung + Garis Tepi (Bawaan)')), 
+                                DropdownMenuItem(value: 'rounded_no_border', child: Text('Melengkung Polos (Tanpa Garis)')), 
+                                DropdownMenuItem(value: 'square_border', child: Text('Persegi Tajam + Garis Tepi')),
+                                DropdownMenuItem(value: 'square_no_border', child: Text('Persegi Tajam Polos')),
+                                DropdownMenuItem(value: 'pill', child: Text('Kapsul Bulat (Pill Shape)'))
+                              ],
+                              onChanged: (v) { setState(() { boxStyle = v!; }); _saveSettings(); }
                             ),
                             const Divider(height: 30),
                             const Text('Palet Warna Kotak:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white70)),
@@ -523,7 +535,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
                 if (bgPath != null)
                   (bgPath!.toLowerCase().endsWith('.mp4') || bgPath!.toLowerCase().endsWith('.mov') || bgPath!.toLowerCase().endsWith('.avi'))
                     ? (_previewVideoCtrl != null && _previewVideoCtrl!.value.isInitialized)
-                      ? FittedBox(key: ValueKey(bgPath), fit: BoxFit.cover, child: SizedBox(width: _previewVideoCtrl!.value.size.width, height: _previewVideoCtrl!.value.size.height, child: VideoPlayer(_previewVideoCtrl!)))
+                      ? FittedBox(key: ValueKey(bgPath), fit: BoxFit.cover, child: SizedBox(width: _previewVideoCtrl!.value.size.width, height: _previewVideoCtrl!.value.size.height, child: AspectRatio(aspectRatio: _previewVideoCtrl!.value.aspectRatio, child: VideoPlayer(_previewVideoCtrl!))))
                       : const Center(child: Icon(Icons.video_file, color: Colors.white24, size: 50))
                     : Image.file(File(bgPath!), key: ValueKey(bgPath), fit: BoxFit.cover)
                 else
@@ -617,7 +629,7 @@ class _LedScreenState extends State<LedScreen> {
         fit: StackFit.expand,
         children: [
           if (isVideo && _videoCtrl != null && _videoCtrl!.value.isInitialized)
-            FittedBox(key: ValueKey(activeBg), fit: BoxFit.cover, child: SizedBox(width: _videoCtrl!.value.size.width, height: _videoCtrl!.value.size.height, child: VideoPlayer(_videoCtrl!)))
+            FittedBox(key: ValueKey(activeBg), fit: BoxFit.cover, child: SizedBox(width: _videoCtrl!.value.size.width, height: _videoCtrl!.value.size.height, child: AspectRatio(aspectRatio: _videoCtrl!.value.aspectRatio, child: VideoPlayer(_videoCtrl!))))
           else if (!isVideo && activeBg != null)
             Image.file(File(activeBg!), key: ValueKey(activeBg), fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.black)),
           
@@ -630,7 +642,7 @@ class _LedScreenState extends State<LedScreen> {
 }
 
 // ==========================================
-// KANVAS PEMENANG 
+// KANVAS PEMENANG DENGAN CUSTOM GAYA KOTAK
 // ==========================================
 class LedCanvasWidget extends StatelessWidget {
   final Map<String, dynamic> d;
@@ -648,10 +660,19 @@ class LedCanvasWidget extends StatelessWidget {
     String fontBox = d['fBox'] ?? 'Segoe UI';
     double opBox = d['opBox'] ?? 0.95;
     String anim = d['animStyle'] ?? 'bounce';
+    String bStyle = d['boxStyle'] ?? 'rounded_border';
     bool showHadiah = d['showHadiah'] ?? true;
 
     String safeNo = (no.isEmpty) ? '-' : no;
     String safeName = (name.isEmpty) ? '...' : name;
+
+    // LOGIKA BENTUK KOTAK (ROUNDED / SQUARE / PILL / NO BORDER)
+    BorderRadius br = BorderRadius.circular(20);
+    if (bStyle.contains('square')) br = BorderRadius.circular(0);
+    if (bStyle.contains('pill')) br = BorderRadius.circular(100);
+
+    Border b = Border.all(color: Colors.white, width: isCenter ? 6 : 3);
+    if (bStyle.contains('no_border')) b = Border.all(color: Colors.transparent, width: 0);
 
     Widget boxContent = Container(
       margin: EdgeInsets.only(left: 10, right: 10, bottom: isCenter ? 40 : 0),
@@ -659,8 +680,8 @@ class LedCanvasWidget extends StatelessWidget {
       width: d['sWidth'] ?? 400,
       decoration: BoxDecoration(
         color: col.withOpacity(opBox),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white, width: isCenter ? 6 : 3),
+        borderRadius: br,
+        border: b,
         boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 20, spreadRadius: 2)],
       ),
       child: Column(
@@ -672,7 +693,6 @@ class LedCanvasWidget extends StatelessWidget {
           const SizedBox(height: 10),
           Text(safeName, textAlign: TextAlign.center, style: TextStyle(fontFamily: fontBox, fontSize: d['sNama'] ?? 65, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1, shadows: const [Shadow(color: Colors.black, blurRadius: 5)]), maxLines: 2, overflow: TextOverflow.ellipsis),
           
-          // FITUR HADIAH (Hide / Show)
           if (showHadiah && hadiah.isNotEmpty) ...[
             const SizedBox(height: 15),
             Container(
@@ -700,7 +720,6 @@ class LedCanvasWidget extends StatelessWidget {
   }
 
   Widget _buildBoxLayout() {
-    // ANTI KOTAK HITAM: Jika aksi adalah 'clear', hancurkan kotak (SizedBox kosong)
     if (action == 'clear') return const SizedBox.shrink();
 
     bool showAll = action == 'all';
@@ -732,7 +751,8 @@ class LedCanvasWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool showTitle = action != 'clear';
+    if (action == 'clear') return const SizedBox.shrink();
+
     String fTitle = d['fTitle'] ?? 'Impact';
     String fKat = d['fKat'] ?? 'Segoe UI';
     
@@ -744,7 +764,7 @@ class LedCanvasWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AnimatedOpacity(
-              duration: const Duration(milliseconds: 500), opacity: showTitle ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 500), opacity: 1.0,
               child: Transform.translate(
                 offset: Offset(0, d['sMainTitleY'] ?? 0),
                 child: Text(d['mainTitle'] ?? 'PEMENANG LOMBA', textAlign: TextAlign.center, style: TextStyle(fontFamily: fTitle, fontSize: d['sMainTitle'] ?? 80, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 5, shadows: const [Shadow(color: Colors.black, blurRadius: 20)])),
@@ -752,7 +772,7 @@ class LedCanvasWidget extends StatelessWidget {
             ),
             
             AnimatedOpacity(
-              duration: const Duration(milliseconds: 500), opacity: (showTitle && d['kat'] != null && d['kat'].toString().isNotEmpty) ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 500), opacity: (d['kat'] != null && d['kat'].toString().isNotEmpty) ? 1.0 : 0.0,
               child: Transform.translate(
                 offset: Offset(0, d['sKatY'] ?? 0),
                 child: Container(
@@ -768,7 +788,7 @@ class LedCanvasWidget extends StatelessWidget {
               ),
             ),
 
-            if (!showTitle && (d['kat'] == null || d['kat'].toString().isEmpty)) const SizedBox(height: 100),
+            if (d['kat'] == null || d['kat'].toString().isEmpty) const SizedBox(height: 100),
 
             _buildBoxLayout()
           ],
