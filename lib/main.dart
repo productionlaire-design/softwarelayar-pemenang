@@ -51,13 +51,11 @@ class _OperatorScreenState extends State<OperatorScreen> {
   String? bgPath;
   List<Map<String, String>> queue = [];
   
-  // State Input Manual
   final _katCtrl = TextEditingController();
   final _j1noCtrl = TextEditingController(); final _j1namaCtrl = TextEditingController();
   final _j2noCtrl = TextEditingController(); final _j2namaCtrl = TextEditingController();
   final _j3noCtrl = TextEditingController(); final _j3namaCtrl = TextEditingController();
 
-  // State Ukuran & Warna
   double sTitle = 80; double sKat = 30; 
   double sBoxTitle = 35; double sBoxNo = 45; double sBoxName = 55;
   Color c1 = Colors.amber; Color c2 = Colors.blueGrey; Color c3 = Colors.deepOrange;
@@ -187,7 +185,11 @@ class _OperatorScreenState extends State<OperatorScreen> {
           Expanded(
             flex: 2,
             child: Container(
-              padding: const EdgeInsets.all(15), border: const Border(right: BorderSide(color: Colors.white12)),
+              padding: const EdgeInsets.all(15),
+              // PERBAIKAN BORDER ADA DI SINI
+              decoration: const BoxDecoration(
+                border: Border(right: BorderSide(color: Colors.white12)),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -244,7 +246,11 @@ class _OperatorScreenState extends State<OperatorScreen> {
           Expanded(
             flex: 2,
             child: Container(
-              padding: const EdgeInsets.all(15), border: const Border(right: BorderSide(color: Colors.white12)),
+              padding: const EdgeInsets.all(15),
+              // PERBAIKAN BORDER ADA DI SINI
+              decoration: const BoxDecoration(
+                border: Border(right: BorderSide(color: Colors.white12)),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -285,10 +291,10 @@ class _OperatorScreenState extends State<OperatorScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      InkWell(onTap: () { setState(()=> c3 = Colors.deepOrange); _saveSettings(); }, child: CircleAvatar(backgroundColor: Colors.deepOrange, child: Text('J3'))),
-                      InkWell(onTap: () { setState(()=> c1 = Colors.amber); _saveSettings(); }, child: CircleAvatar(backgroundColor: Colors.amber, child: Text('J1', style: TextStyle(color: Colors.black)))),
-                      InkWell(onTap: () { setState(()=> c2 = Colors.blueGrey); _saveSettings(); }, child: CircleAvatar(backgroundColor: Colors.blueGrey, child: Text('J2'))),
-                      InkWell(onTap: () { setState(() { c1=Colors.green; c2=Colors.teal; c3=Colors.lightGreen; }); _saveSettings(); }, child: CircleAvatar(backgroundColor: Colors.green, child: Text('Alt'))),
+                      InkWell(onTap: () { setState(()=> c3 = Colors.deepOrange); _saveSettings(); }, child: CircleAvatar(backgroundColor: Colors.deepOrange, child: const Text('J3'))),
+                      InkWell(onTap: () { setState(()=> c1 = Colors.amber); _saveSettings(); }, child: CircleAvatar(backgroundColor: Colors.amber, child: const Text('J1', style: TextStyle(color: Colors.black)))),
+                      InkWell(onTap: () { setState(()=> c2 = Colors.blueGrey); _saveSettings(); }, child: CircleAvatar(backgroundColor: Colors.blueGrey, child: const Text('J2'))),
+                      InkWell(onTap: () { setState(() { c1=Colors.green; c2=Colors.teal; c3=Colors.lightGreen; }); _saveSettings(); }, child: CircleAvatar(backgroundColor: Colors.green, child: const Text('Alt'))),
                     ],
                   ),
                   const Divider(),
@@ -329,7 +335,7 @@ class LedApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(fontFamily: 'Segoe UI'), // Font bawaan Windows yang rapi
+      theme: ThemeData(fontFamily: 'Segoe UI'),
       home: LedScreen(windowId: windowId),
     );
   }
@@ -345,7 +351,7 @@ class LedScreen extends StatefulWidget {
 
 class _LedScreenState extends State<LedScreen> {
   VideoPlayerController? _videoCtrl;
-  Map<String, dynamic> d = {}; // Data dari operator
+  Map<String, dynamic> d = {}; 
   String currentAction = 'clear';
   String? activeBg;
   bool isVideo = false;
@@ -360,7 +366,6 @@ class _LedScreenState extends State<LedScreen> {
     if (call.method == 'onReceiveData') {
       final newData = jsonDecode(call.arguments.toString());
       
-      // Update Background
       if (newData['bgPath'] != null && newData['bgPath'] != activeBg) {
         activeBg = newData['bgPath'];
         final ext = activeBg!.split('.').last.toLowerCase();
@@ -395,7 +400,6 @@ class _LedScreenState extends State<LedScreen> {
     super.dispose();
   }
 
-  // Desain KOTAK PEMENANG (3 Baris Persis Permintaan Anda)
   Widget _buildBox(String title, String no, String name, Color col, bool isCenter) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
@@ -411,13 +415,10 @@ class _LedScreenState extends State<LedScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Baris 1: JUARA
           Text(title, style: TextStyle(fontSize: d['sBoxTitle'] ?? 35, fontWeight: FontWeight.w900, color: Colors.black87, letterSpacing: 2)),
           const SizedBox(height: 15),
-          // Baris 2: NOMOR DADA
           Text(no.isEmpty ? '-' : no, style: TextStyle(fontSize: d['sBoxNo'] ?? 45, fontFamily: 'Courier New', fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 15),
-          // Baris 3: NAMA
           Text(name.isEmpty ? '-' : name, textAlign: TextAlign.center, style: TextStyle(fontSize: d['sBoxName'] ?? 55, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1, shadows: const [Shadow(color: Colors.black, blurRadius: 10)])),
         ],
       ),
@@ -433,25 +434,20 @@ class _LedScreenState extends State<LedScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. BACKGROUND
           if (isVideo && _videoCtrl != null && _videoCtrl!.value.isInitialized)
             FittedBox(fit: BoxFit.cover, child: SizedBox(width: _videoCtrl!.value.size.width, height: _videoCtrl!.value.size.height, child: VideoPlayer(_videoCtrl!)))
           else if (!isVideo && activeBg != null)
             Image.file(File(activeBg!), fit: BoxFit.cover),
           
-          // Overlay Gelap Sedikit
           Container(color: Colors.black.withOpacity(0.3)),
 
-          // 2. KONTEN UTAMA
           if (currentAction != 'clear')
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // JUDUL UTAMA
                   Text('PEMENANG LOMBA', style: TextStyle(fontSize: d['sTitle'] ?? 80, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 5, shadows: const [Shadow(color: Colors.black, blurRadius: 20)])),
                   
-                  // KATEGORI (Di Bawah Judul)
                   if (d['kat'] != null && d['kat'].toString().isNotEmpty)
                     Container(
                       margin: const EdgeInsets.only(top: 10, bottom: 50),
@@ -462,7 +458,6 @@ class _LedScreenState extends State<LedScreen> {
                   else
                     const SizedBox(height: 60),
 
-                  // BARISAN KOTAK
                   if (currentAction == 'all')
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
