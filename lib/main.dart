@@ -11,13 +11,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
-  await windowManager.ensureInitialized();
-  MediaKit.ensureInitialized(); // INIT MESIN VLC
+  MediaKit.ensureInitialized(); // INIT MESIN VLC (Boleh untuk semua jendela)
 
   if (args.firstOrNull == 'multi_window') {
+    // =========================================================
+    // INI ADALAH JENDELA KE-2 (LED)
+    // SANGAT HARAM MEMANGGIL windowManager DI SINI!
+    // =========================================================
     final windowId = int.parse(args[1]);
     runApp(LedApp(windowId: windowId));
   } else {
+    // =========================================================
+    // INI ADALAH JENDELA UTAMA (OPERATOR)
+    // Aman memanggil windowManager di sini
+    // =========================================================
+    await windowManager.ensureInitialized();
     runApp(const OperatorApp());
   }
 }
@@ -173,7 +181,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
       ..show();
       
     setState(() { ledWindowId = window.windowId; });
-    Future.delayed(const Duration(milliseconds: 600), () => _sendToLed(liveAction));
+    Future.delayed(const Duration(milliseconds: 600), () => _sendToLed('clear'));
   }
 
   void _pickBackground() async {
@@ -271,6 +279,10 @@ class _OperatorScreenState extends State<OperatorScreen> {
           ],
         ),
         actions: [
+          const Padding(
+            padding: EdgeInsets.only(right: 15, top: 18),
+            child: Text('*Klik 2x pada Layar Ke-2 untuk Fullscreen', style: TextStyle(color: Colors.yellow, fontSize: 12, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
+          ),
           ElevatedButton.icon(
             icon: const Icon(Icons.open_in_new, color: Colors.white), 
             label: const Text('BUKA DISPLAY LED', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)), 
@@ -588,7 +600,7 @@ class _OperatorScreenState extends State<OperatorScreen> {
 }
 
 // ==========================================
-// BAGIAN 2: APLIKASI LED (MURNI TANPA ERROR)
+// BAGIAN 2: APLIKASI LED (MURNI TANPA WINDOW_MANAGER CRASH)
 // ==========================================
 class LedApp extends StatelessWidget {
   final int windowId;
@@ -612,6 +624,7 @@ class LedScreen extends StatefulWidget {
 }
 
 class _LedScreenState extends State<LedScreen> {
+  late final WindowController _windowController;
   Player? _player;
   VideoController? _videoCtrl;
   Map<String, dynamic> d = {}; 
@@ -622,6 +635,7 @@ class _LedScreenState extends State<LedScreen> {
   @override
   void initState() {
     super.initState();
+    _windowController = WindowController.fromWindowId(widget.windowId);
     DesktopMultiWindow.setMethodHandler(_handleMethodCall);
   }
 
@@ -664,18 +678,23 @@ class _LedScreenState extends State<LedScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // MEMAKAI VLC ENGINE
-          if (isVideo && _videoCtrl != null)
-            Video(controller: _videoCtrl!, fit: BoxFit.cover, controls: (s) => const SizedBox.shrink())
-          else if (!isVideo && activeBg != null)
-            Image.file(File(activeBg!), key: ValueKey(activeBg), fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.black)),
-          
-          if (d.isNotEmpty)
-            LedCanvasWidget(d: d, action: currentAction),
-        ],
+      body: GestureDetector(
+        // SENSOR KLIK 2X UNTUK FULLSCREEN AMAN
+        onDoubleTap: () async {
+          _windowController.setFullscreen(true);
+        },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (isVideo && _videoCtrl != null)
+              Video(controller: _videoCtrl!, fit: BoxFit.cover, controls: (s) => const SizedBox.shrink())
+            else if (!isVideo && activeBg != null)
+              Image.file(File(activeBg!), key: ValueKey(activeBg), fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.black)),
+            
+            if (d.isNotEmpty)
+              LedCanvasWidget(d: d, action: currentAction),
+          ],
+        ),
       ),
     );
   }
